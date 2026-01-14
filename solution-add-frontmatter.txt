@@ -1,0 +1,19 @@
+# 解决方案2：给导出的Canvas添加frontmatter
+
+## 操作步骤
+1. 打开导出的 .canvas 文件
+2. 在最顶部添加以下frontmatter：
+```yaml
+---
+# WebCanvas Export
+source: webcanvas-browser-extension
+editable: true
+---
+```
+3. 保存文件
+4. 在Obsidian中打开
+5. 测试能否编辑
+
+## 说明
+Obsidian手动创建的Canvas没有frontmatter，所以Advanced Canvas认为它是"内部"文件。
+添加frontmatter后，可能骗过Advanced Canvas的检测机制。

@@ -65,6 +65,20 @@ function generateUUID(): string {
   })
 }
 
+/**
+ * CRITICAL FIX: Normalize line endings to Unix format (\n)
+ * Windows uses \r\n which can cause Obsidian parsing issues
+ */
+function normalizeTextContent(text: string): string {
+  if (!text) return ''
+  // Replace Windows line endings with Unix line endings
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+}
+
+/**
+ * Calculate total height needed for each row in a grid layout
+ */
+
 // ========== Main Export Function ==========
 
 export async function exportToCanvas(projectId: number, projectName: string): Promise<void> {
@@ -78,13 +92,16 @@ export async function exportToCanvas(projectId: number, projectName: string): Pr
     return
   }
 
-  // 2. Convert to Obsidian Canvas format
+  console.log('[WebCanvas DEBUG] Total nodes fetched:', nodes.length)
+
+  // 2. Convert to Obsidian Canvas format with improved layout
   const canvasNodes: ObsidianNode[] = nodes.map((node, index: number) => {
     const col = index % COLS
     const row = Math.floor(index / COLS)
-
+    
+    // Calculate X and Y with proper spacing
     const x = Math.round(col * (CARD_WIDTH + GAP))
-    const y = Math.round(row * (estimateHeight(node) + GAP))
+    const y = Math.round(row * (CARD_HEIGHT_TEXT + GAP))
 
     const obsidianNode: ObsidianNode = {
       id: generateUUID(),
@@ -97,13 +114,37 @@ export async function exportToCanvas(projectId: number, projectName: string): Pr
 
     // Add type-specific fields
     if (node.type === 'text') {
-      obsidianNode.text = node.text || ''
+      // CRITICAL FIX: Normalize line endings
+      const normalizedText = normalizeTextContent(node.text || '')
+      obsidianNode.text = normalizedText
+      
+      console.log('[WebCanvas DEBUG] Text node:', JSON.stringify({
+        id: obsidianNode.id,
+        textLength: normalizedText.length,
+        hasCarriageReturn: normalizedText.includes('\r'),
+        textPreview: normalizedText.substring(0, 50) + '...',
+        x: x,
+        y: y
+      }))
     } else if (node.type === 'file') {
       obsidianNode.file = `attachments/${node.fileName || 'image.png'}`
+      console.log('[WebCanvas DEBUG] File node:', JSON.stringify({
+        id: obsidianNode.id,
+        file: obsidianNode.file,
+        fileName: node.fileName,
+        x: x,
+        y: y
+      }))
     } else if (node.type === 'link') {
       // Link nodes should ONLY have 'url' field according to JSON Canvas v1.0 spec
       // Do NOT add 'text' field - it will cause Obsidian display issues
       obsidianNode.url = node.url || ''
+      console.log('[WebCanvas DEBUG] Link node:', JSON.stringify({
+        id: obsidianNode.id,
+        url: obsidianNode.url,
+        x: x,
+        y: y
+      }))
     }
 
     return obsidianNode
@@ -117,6 +158,23 @@ export async function exportToCanvas(projectId: number, projectName: string): Pr
 
   const json = JSON.stringify(canvas, null, 2)
   console.log('[WebCanvas] Canvas JSON generated:', json.length, 'bytes')
+  
+  // CRITICAL: Verify no carriage returns in JSON
+  if (json.includes('\r')) {
+    console.error('[WebCanvas ERROR] JSON still contains \r characters!')
+  } else {
+    console.log('[WebCanvas] JSON is clean (no \r characters)')
+  }
+  
+  console.log('[WebCanvas DEBUG] Generated JSON:', json)
+  
+  // Also copy to clipboard for easy inspection
+  try {
+    await navigator.clipboard.writeText(json)
+    console.log('[WebCanvas] JSON copied to clipboard - you can paste it elsewhere to inspect')
+  } catch (err) {
+    console.warn('[WebCanvas] Could not copy to clipboard:', err)
+  }
 
   // 4. Create ZIP
   const zip = new JSZip()
@@ -128,16 +186,25 @@ export async function exportToCanvas(projectId: number, projectName: string): Pr
   const attachmentsFolder = zip.folder('attachments')
   const imageNodes = nodes.filter((node: CanvasNode) => node.type === 'file' && node.fileData)
   
+  console.log('[WebCanvas DEBUG] Image nodes to add:', imageNodes.length)
+  
   for (const node of imageNodes) {
     if (node.fileData) {
       const fileName = node.fileName || `image-${node.id}.png`
       attachmentsFolder!.file(fileName, node.fileData)
+      console.log('[WebCanvas DEBUG] Added image to ZIP:', fileName, 'size:', node.fileData.size, 'bytes')
     }
   }
 
   // 5. Generate and download ZIP
   const blob = await zip.generateAsync({ type: 'blob' })
   const url = URL.createObjectURL(blob)
+
+  console.log('[WebCanvas DEBUG] ZIP blob size:', blob.size, 'bytes')
+  
+  // Additional ZIP verification
+  const zipContent = await zip.generateAsync({ type: 'string' })
+  console.log('[WebCanvas DEBUG] ZIP contains .canvas file:', zipContent.includes(projectName + '.canvas'))
 
   // Trigger download
   const a = document.createElement('a')
