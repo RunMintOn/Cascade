@@ -4,7 +4,7 @@
 
 ---
 
-# 项目代号：WebCanvas (Obsidian Scout)
+# 项目代号：Stream2Grid (Obsidian Scout)
 ## 开发白皮书 V2.0 - 核心架构与逻辑规范
 
 ### 1. 产品核心范式 (The Paradigm Shift)
