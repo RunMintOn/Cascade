@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "WebCanvas - Obsidian Browser Scout: Collect web content and export to Obsidian Canvas",
+  "description": "Stream2Grid - Collect web content and export to Obsidian Canvas",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && node fix-build.cjs",
