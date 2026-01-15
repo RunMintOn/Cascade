@@ -30,9 +30,20 @@ export default function TextCard({
   
   // Fetch node data to get hasEdited status
   useEffect(() => {
+    console.log('[TextCard DEBUG] Card ID:', id, 'Props text:', text, 'Props originalText:', originalText)
+    
     db.nodes.get(id).then((nodeData) => {
       if (nodeData) {
+        console.log('[TextCard DEBUG] DB data:', {
+          id: nodeData.id,
+          hasEdited: nodeData.hasEdited,
+          text: nodeData.text,
+          originalText: nodeData.originalText,
+          editedText: nodeData.editedText,
+        })
         setHasEdited(!!nodeData.hasEdited)
+      } else {
+        console.error('[TextCard DEBUG] Node not found:', id)
       }
     })
   }, [id])
@@ -123,7 +134,11 @@ export default function TextCard({
       }`}
     >
       {/* Version Toggle Icon - Top Left Corner */}
-      {hasEdited && !isEditing && (
+      {(() => {
+        const shouldShow = hasEdited && !isEditing
+        console.log('[TextCard DEBUG] Icon render check:', { hasEdited, isEditing, shouldShow, originalText })
+        return shouldShow
+      })() && (
         <button
           onClick={() => setIsShowingOriginal(!isShowingOriginal)}
           className={`
