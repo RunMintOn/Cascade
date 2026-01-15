@@ -42,13 +42,6 @@ export default function CardStream({ projectId, onDelete }: CardStreamProps) {
             {nodes.map((node) => {
               switch (node.type) {
                  case 'text':
-                   console.log('[CardStream DEBUG] Text node:', {
-                     id: node.id,
-                     text: node.text,
-                     originalText: node.originalText,
-                     hasEdited: node.hasEdited,
-                     type: node.type,
-                   })
                    return (
                      <TextCard
                        key={node.id}

@@ -30,32 +30,12 @@ export default function TextCard({
   
   // Fetch node data to get hasEdited status
   useEffect(() => {
-    console.log('[TextCard DEBUG] Fetching node data...', {
-      id,
-      text,
-      originalText,
-      hasEdited
-    })
-    
     db.nodes.get(id).then((nodeData) => {
       if (nodeData) {
-        console.log('[TextCard DEBUG] DB data fetched:', {
-          id: nodeData.id,
-          hasEdited: nodeData.hasEdited,
-          text: nodeData.text,
-          originalText: nodeData.originalText,
-          editedText: nodeData.editedText,
-        })
-        
         // Only update state if hasEdited changed
         if (nodeData.hasEdited !== hasEdited) {
-          console.log('[TextCard DEBUG] Updating hasEdited state from', hasEdited, 'to', nodeData.hasEdited)
           setHasEdited(!!nodeData.hasEdited)
-        } else {
-          console.log('[TextCard DEBUG] hasEdits unchanged, skipping state update')
         }
-      } else {
-        console.error('[TextCard DEBUG] Node not found:', id)
       }
     })
   }, [id, text, hasEdited]) // Add text and hasEdited to dependencies
@@ -145,33 +125,31 @@ export default function TextCard({
         isEditing ? 'border-blue-400 animate-pulse-blue ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      {/* Version Toggle Icon - Top Left Corner */}
-      {(() => {
-        const shouldShow = hasEdited && !isEditing
-        console.log('[TextCard DEBUG] Icon render check:', { hasEdited, isEditing, shouldShow, originalText })
-        return shouldShow
-      })() && (
+      {/* Version Toggle Icon - Top Left Corner Vertex */}
+      {hasEdited && !isEditing && (
         <button
           onClick={() => setIsShowingOriginal(!isShowingOriginal)}
           className={`
-            absolute top-2 left-2 w-6 h-6 rounded-full 
+            absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2
+            w-5 h-5 rounded-full 
             flex items-center justify-center 
-            transition-all duration-200
-            z-10
+            transition-all duration-500 ease-in-out
+            z-20 shadow-md ring-2 ring-white
             ${isShowingOriginal 
-              ? 'bg-blue-500 hover:bg-blue-600 text-white scale-105' 
-              : 'bg-slate-100 ring-1 ring-slate-300 text-slate-400 hover:bg-slate-200'
+              ? 'bg-blue-500 rotate-180 scale-110' 
+              : 'bg-slate-300 hover:bg-slate-400 hover:scale-110'
             }
+            active:scale-90
           `}
           title={isShowingOriginal ? "查看编辑版" : "查看原始版"}
         >
-          {isShowingOriginal ? (
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
-            </svg>
-          ) : (
-            <div className="w-1.5 h-1.5 rounded-full bg-current" />
-          )}
+          <div className={`
+            rounded-full transition-all duration-500
+            ${isShowingOriginal 
+              ? 'w-2 h-2 border-2 border-white bg-transparent' 
+              : 'w-1.5 h-1.5 bg-slate-600'
+            }
+          `} />
         </button>
       )}
       
