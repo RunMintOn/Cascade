@@ -141,7 +141,6 @@ export default function TextCard({
             }
             active:scale-90
           `}
-          title={isShowingOriginal ? "查看编辑版" : "查看原始版"}
         >
           <div className={`
             rounded-full transition-all duration-500
