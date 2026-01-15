@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { db } from '../../services/db'
+import { db, updateTextNode } from '../../services/db'
 
 interface TextCardProps {
   id: number
   text: string
+  originalText?: string
   sourceUrl?: string
   sourceIcon?: string
   onDelete: () => void
@@ -12,6 +13,7 @@ interface TextCardProps {
 export default function TextCard({
   id,
   text,
+  originalText,
   sourceUrl,
   sourceIcon,
   onDelete,
@@ -20,9 +22,20 @@ export default function TextCard({
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(text)
   const [iconError, setIconError] = useState(false)
+  const [isShowingOriginal, setIsShowingOriginal] = useState(false)
+  const [hasEdited, setHasEdited] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isSavingRef = useRef(false)
   const lastSaveTimeRef = useRef(0)
+  
+  // Fetch node data to get hasEdited status
+  useEffect(() => {
+    db.nodes.get(id).then((nodeData) => {
+      if (nodeData) {
+        setHasEdited(!!nodeData.hasEdited)
+      }
+    })
+  }, [id])
 
   const lines = text.split('\n')
   const isLongText = lines.length > 4 || text.length > 300
@@ -48,21 +61,28 @@ export default function TextCard({
   const handleEnterEdit = useCallback(() => {
     // 防止保存瞬间的布局抖动触发双击重新进入
     if (Date.now() - lastSaveTimeRef.current < 300) return
+    // 如果在查看原文，先切换回编辑版
+    if (isShowingOriginal) {
+      setIsShowingOriginal(false)
+    }
     setIsEditing(true)
-  }, [])
-
+  }, [isShowingOriginal])
+  
   const handleSave = useCallback(async () => {
     if (isSavingRef.current) return
     
     const trimmed = editText.trim()
-    if (trimmed === text) {
+    const currentText = text  // Use prop 'text' for comparison
+    
+    // 如果内容没变（包括查看原文时的回退），直接关闭编辑
+    if (trimmed === currentText) {
       setIsEditing(false)
       return
     }
-
+    
     try {
       isSavingRef.current = true
-      await db.nodes.update(id, { text: trimmed })
+      await updateTextNode(id, trimmed)
       lastSaveTimeRef.current = Date.now()
       setIsEditing(false)
     } catch (err) {
@@ -102,7 +122,33 @@ export default function TextCard({
         isEditing ? 'border-blue-400 animate-pulse-blue ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      {/* Delete Button */}
+      {/* Version Toggle Icon - Top Left Corner */}
+      {hasEdited && !isEditing && (
+        <button
+          onClick={() => setIsShowingOriginal(!isShowingOriginal)}
+          className={`
+            absolute top-2 left-2 w-6 h-6 rounded-full 
+            flex items-center justify-center 
+            transition-all duration-200
+            z-10
+            ${isShowingOriginal 
+              ? 'bg-blue-500 hover:bg-blue-600 text-white scale-105' 
+              : 'bg-slate-100 ring-1 ring-slate-300 text-slate-400 hover:bg-slate-200'
+            }
+          `}
+          title={isShowingOriginal ? "查看编辑版" : "查看原始版"}
+        >
+          {isShowingOriginal ? (
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+            </svg>
+          ) : (
+            <div className="w-1.5 h-1.5 rounded-full bg-current" />
+          )}
+        </button>
+      )}
+      
+      {/* Delete Button - Top Right Corner */}
       {!isEditing && (
         <button
           onClick={onDelete}
@@ -162,7 +208,11 @@ export default function TextCard({
               fontSize: '0.875rem' // 强制对齐
             }}
           >
-            {text}
+            {isShowingOriginal ? (
+              <span className="text-slate-500 italic">原文：{originalText}</span>
+            ) : (
+              <span>{text}</span>
+            )}
           </div>
         )}
       </div>
@@ -200,6 +250,14 @@ export default function TextCard({
                   className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 >
                   完成
+                </button>
+              ) : isShowingOriginal ? (
+                <button
+                  disabled
+                  className="text-xs px-2 py-1 rounded text-slate-300 cursor-not-allowed bg-slate-50"
+                  title="无法编辑原始版本"
+                >
+                  编辑
                 </button>
               ) : (
                 <button

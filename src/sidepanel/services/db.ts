@@ -13,7 +13,10 @@ export interface CanvasNode {
   projectId: number
   type: 'text' | 'file' | 'link'
   order: number
-  text?: string
+  text?: string           // Currently displayed text (always points to edited version if exists)
+  originalText?: string   // Original captured text (for version comparison)
+  editedText?: string     // User's edited version
+  hasEdited?: boolean     // True if edited version exists
   fileData?: Blob        // Image binary data (NOT indexed!)
   fileName?: string
   url?: string
@@ -50,7 +53,10 @@ export async function addTextNode(projectId: number, text: string, sourceUrl?: s
     projectId,
     type: 'text',
     order: maxOrder,
-    text,
+    text,                    // Initially points to original text
+    originalText: text,        // Save original on creation
+    editedText: undefined,      // No edited version yet
+    hasEdited: false,           // Mark as not edited
     sourceUrl,
     sourceIcon,
     createdAt: Date.now(),
@@ -107,4 +113,42 @@ export async function reorderNodes(_projectId: number, orderedIds: number[]) {
       )
     )
   })
+}
+
+// ========== Version Management ==========
+/**
+ * Update text node with version detection
+ * - First edit: saves originalText, creates editedText
+ * - Subsequent edits: only updates editedText
+ * - Always updates 'text' to point to displayed version
+ */
+export async function updateTextNode(nodeId: number, newContent: string) {
+  const node = await db.nodes.get(nodeId)
+  if (!node) {
+    throw new Error(`Node ${nodeId} not found`)
+  }
+  
+  const trimmed = newContent.trim()
+  
+  // If content hasn't changed, do nothing
+  if (node.editedText && trimmed === node.editedText) {
+    return
+  }
+  
+  // Version detection
+  if (!node.hasEdited) {
+    // First edit: save original and create edited version
+    await db.nodes.update(nodeId, {
+      originalText: node.text,
+      editedText: trimmed,
+      text: trimmed,
+      hasEdited: true
+    })
+  } else {
+    // Subsequent edit: only update edited version
+    await db.nodes.update(nodeId, {
+      editedText: trimmed,
+      text: trimmed
+    })
+  }
 }

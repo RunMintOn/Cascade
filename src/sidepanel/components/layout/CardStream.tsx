@@ -41,17 +41,18 @@ export default function CardStream({ projectId, onDelete }: CardStreamProps) {
           <div className="space-y-3">
             {nodes.map((node) => {
               switch (node.type) {
-                case 'text':
-                  return (
-                    <TextCard
-                      key={node.id}
-                      id={node.id!}
-                      text={node.text || ''}
-                      sourceUrl={node.sourceUrl}
-                      sourceIcon={node.sourceIcon}
-                      onDelete={() => handleDelete(node.id!)}
-                    />
-                  )
+                 case 'text':
+                   return (
+                     <TextCard
+                       key={node.id}
+                       id={node.id!}
+                       text={node.text || ''}
+                       originalText={node.originalText}
+                       sourceUrl={node.sourceUrl}
+                       sourceIcon={node.sourceIcon}
+                       onDelete={() => handleDelete(node.id!)}
+                     />
+                   )
                 case 'file':
                   return (
                     <ImageCard
