@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../../services/db'
-import type { Project } from '../../App'
+import { db, type Project } from '../../services/db'
 
 interface ProjectListProps {
   onSelectProject: (project: Project) => void
@@ -18,20 +17,23 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
   const handleCreateProject = useCallback(async () => {
     if (!newProjectName.trim()) return
 
-    const id = await db.projects.add({
-      name: newProjectName.trim(),
-      updatedAt: Date.now(),
-    })
+    try {
+      const id = await db.projects.add({
+        name: newProjectName.trim(),
+        updatedAt: Date.now(),
+      })
 
-    setNewProjectName('')
-    setIsCreating(false)
+      setNewProjectName('')
+      setIsCreating(false)
 
-    // Navigate to the new project
-    onSelectProject({
-      id: id as number,
-      name: newProjectName.trim(),
-      updatedAt: Date.now(),
-    })
+      onSelectProject({
+        id: id as number,
+        name: newProjectName.trim(),
+        updatedAt: Date.now(),
+      })
+    } catch (e) {
+      console.error('[WebCanvas] Failed to create project:', e)
+    }
   }, [newProjectName, onSelectProject])
 
   const handleDeleteProject = useCallback(async (e: React.MouseEvent, projectId: number) => {
