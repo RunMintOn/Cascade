@@ -30,7 +30,7 @@ export default function CardStream({ projectId, onDelete }: CardStreamProps) {
 
   return (
     <DropZone projectId={projectId}>
-      <div className="p-4 min-h-full">
+      <div className="px-5 py-4 min-h-full">
         {nodes.length === 0 ? (
           <div className="text-center text-slate-500 py-12">
             <div className="text-4xl mb-4">📋</div>

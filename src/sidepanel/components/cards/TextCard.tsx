@@ -50,9 +50,6 @@ export default function TextCard({
     }
   }, [text, isEditing])
 
-  // Auto-resize textarea is now handled by CSS grid technique
-  // Removed the useEffect that caused layout jumps
-
   // Focus textarea when entering edit mode
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -125,41 +122,58 @@ export default function TextCard({
         isEditing ? 'border-blue-400 animate-pulse-blue ring-1 ring-blue-100' : 'border-slate-200'
       }`}
     >
-      {/* Version Toggle Icon - Top Left Corner Vertex */}
+      {/* Version Toggle Icon & Sliding Label - Top Left Corner Vertex */}
       {hasEdited && !isEditing && (
-        <button
-          onClick={() => setIsShowingOriginal(!isShowingOriginal)}
-          className={`
-            absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2
-            w-5 h-5 rounded-full 
-            flex items-center justify-center 
-            transition-all duration-500 ease-in-out
-            z-20 shadow-md ring-2 ring-white
-            ${isShowingOriginal 
-              ? 'bg-blue-500 rotate-180 scale-110' 
-              : 'bg-slate-300 hover:bg-slate-400 hover:scale-110'
-            }
-            active:scale-90
-          `}
-        >
+        <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 z-20 group/version">
+          <button
+            onClick={() => setIsShowingOriginal(!isShowingOriginal)}
+            className={`
+              shrink-0 w-5 h-5 rounded-full 
+              flex items-center justify-center 
+              transition-all duration-500 ease-in-out
+              shadow-md ring-2 ring-white
+              ${isShowingOriginal 
+                ? 'bg-blue-500 rotate-180 scale-110' 
+                : 'bg-slate-300 hover:bg-slate-400 hover:scale-110'
+              }
+              active:scale-90
+            `}
+          >
+            <div className={`
+              rounded-full transition-all duration-500
+              ${isShowingOriginal 
+                ? 'w-2 h-2 border-2 border-white bg-transparent' 
+                : 'w-1.5 h-1.5 bg-slate-600'
+              }
+            `} />
+          </button>
+          
+          {/* Sliding Label - Positioned absolutely relative to the icon to prevent shifting */}
           <div className={`
-            rounded-full transition-all duration-500
-            ${isShowingOriginal 
-              ? 'w-2 h-2 border-2 border-white bg-transparent' 
-              : 'w-1.5 h-1.5 bg-slate-600'
-            }
-          `} />
-        </button>
+            absolute left-full top-1/2 -translate-y-1/2 ml-1.5 overflow-hidden transition-all duration-500 ease-out flex items-center
+            ${hasEdited ? 'max-w-24 opacity-100' : 'max-w-0 opacity-0'}
+          `}>
+            <span className={`
+              text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded shadow-sm border animate-in slide-in-from-left-2 duration-500
+              ${isShowingOriginal 
+                ? 'bg-blue-50 text-blue-500 border-blue-100' 
+                : 'bg-slate-100 text-slate-500 border-slate-200'
+              }
+            `}>
+              {isShowingOriginal ? 'ORIGINAL' : 'EDITED'}
+            </span>
+          </div>
+        </div>
       )}
       
-      {/* Delete Button - Top Right Corner */}
+      {/* Delete Button - Top Right Corner Vertex */}
       {!isEditing && (
         <button
           onClick={onDelete}
-          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-slate-100 z-10"
+          className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full bg-white shadow-md ring-2 ring-white hover:scale-110 active:scale-90 z-20"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       )}
@@ -210,17 +224,10 @@ export default function TextCard({
               isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'
             }`}
             style={{
-              lineHeight: '1.625', // 强制对齐
-              fontSize: '0.875rem' // 强制对齐
+              lineHeight: '1.625',
+              fontSize: '0.875rem'
             }}
           >
-            {isShowingOriginal && (
-              <div className="absolute -top-1 right-7 pointer-events-none animate-in fade-in slide-in-from-right-2 duration-300">
-                <span className="text-[9px] font-bold tracking-wider text-blue-500/60 bg-blue-50 px-1.5 py-0.5 rounded uppercase border border-blue-100/50">
-                  Original
-                </span>
-              </div>
-            )}
             {isShowingOriginal ? originalText : text}
           </div>
         )}
