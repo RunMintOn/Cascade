@@ -2,54 +2,81 @@
 
 console.log('[WebCanvas] Content script loaded on:', window.location.href)
 
-// Listen for drag start events to enhance drag data
+/**
+ * 提取当前页面的 Favicon
+ */
+function getPageFavicon() {
+  try {
+    const icon = (document.querySelector('link[rel~="icon"]') as HTMLLinkElement)?.href || 
+                 (document.querySelector('link[rel~="apple-touch-icon"]') as HTMLLinkElement)?.href ||
+                 `${window.location.origin}/favicon.ico`
+    return icon
+  } catch {
+    return `${window.location.origin}/favicon.ico`
+  }
+}
+
+// 使用 capture 阶段确保在网站自有逻辑之前执行，提高成功率
 document.addEventListener('dragstart', (event) => {
   const target = event.target as HTMLElement
-  
-  // Construct standard payload
+  if (!target) return
+
+  // 基础信息
   const payload = {
     sourceUrl: window.location.href,
     sourceTitle: document.title,
+    sourceIcon: getPageFavicon(),
     type: 'unknown' as 'text' | 'image' | 'link' | 'unknown',
     content: null as string | null,
+    linkTitle: null as string | null,
   }
 
-  // Detect drag target type
-  if (target.tagName === 'IMG') {
+  // 1. 优先判断是否拖拽的是链接 (A 标签或其子元素)
+  const anchor = target.tagName === 'A' ? target : (target instanceof Element ? target.closest('a') : null)
+  
+  // 2. 判断是否拖拽的是图片
+  const isImage = target.tagName === 'IMG'
+
+  // 3. 获取当前选中的文本
+  const selection = window.getSelection()?.toString().trim()
+
+  if (isImage) {
     const img = target as HTMLImageElement
     payload.type = 'image'
     payload.content = img.src
-    console.log('[WebCanvas] Dragging image:', img.src)
-  } else if (target.tagName === 'A') {
-    const anchor = target as HTMLAnchorElement
+  } else if (anchor) {
+    // 如果拖拽的是链接
+    // 如果拖拽时已经选中了文本，且选中文本就在这个链接里，或者拖拽的就是一段文本
+    // 这种情况下，如果选中文本不为空，我们可能还是想当做文本处理？
+    // 但通常拖拽链接就是想要链接。为了稳定，我们保持原逻辑，优先识别链接。
     payload.type = 'link'
-    payload.content = anchor.href
-    console.log('[WebCanvas] Dragging link:', anchor.href)
-  } else {
-    // Check for selected text
-    const selection = window.getSelection()?.toString()
-    if (selection && selection.trim()) {
-      payload.type = 'text'
-      payload.content = selection.trim()
-      console.log('[WebCanvas] Dragging text:', selection.substring(0, 50) + '...')
-    }
+    payload.content = (anchor as HTMLAnchorElement).href
+    payload.linkTitle = (anchor as HTMLElement).innerText.trim() || (anchor as HTMLAnchorElement).title || null
+  } else if (selection) {
+    // 纯文本选择
+    payload.type = 'text'
+    payload.content = selection
   }
 
-  // Set custom MIME type for our extension
+  // 如果识别到了内容，注入自定义数据
   if (payload.type !== 'unknown' && payload.content) {
     try {
+      // 同时设置文本和自定义数据，增加兼容性
       event.dataTransfer?.setData(
         'application/webcanvas-payload',
         JSON.stringify(payload)
       )
+      
+      // 额外的保险：将 payload 发送给 Background Script 缓存
+      // 这解决了部分网站（如 GitHub）可能存在的 dataTransfer 限制或跨域丢失问题
+      chrome.runtime.sendMessage({
+        action: 'setDragPayload',
+        payload: payload
+      }).catch(() => { /* 忽略扩展未连接错误 */ })
+
+      console.log('[WebCanvas] Drag detected:', payload.type, payload.sourceTitle)
     } catch (e) {
-      // Some sites may block custom data types
       console.warn('[WebCanvas] Could not set custom drag data:', e)
     }
   }
-})
-
-// Also listen for dragend to clean up if needed
-document.addEventListener('dragend', () => {
-  // Cleanup if needed
-})
+}, true); // Use capture phase

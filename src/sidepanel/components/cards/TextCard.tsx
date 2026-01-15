@@ -19,6 +19,7 @@ export default function TextCard({
   const [expanded, setExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(text)
+  const [iconError, setIconError] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isSavingRef = useRef(false)
   const lastSaveTimeRef = useRef(0)
@@ -217,14 +218,12 @@ export default function TextCard({
       {/* Footer with source */}
       {sourceUrl && !isEditing && (
         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5 text-xs text-slate-400">
-          {sourceIcon && (
+          {sourceIcon && !iconError && (
             <img
               src={sourceIcon}
               alt=""
-              className="w-4 h-4 rounded-sm"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none'
-              }}
+              className="w-4 h-4 rounded-sm object-contain"
+              onError={() => setIconError(true)}
             />
           )}
           <a

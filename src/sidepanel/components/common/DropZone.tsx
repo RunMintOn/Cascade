@@ -9,13 +9,26 @@ interface DropZoneProps {
 interface WebCanvasPayload {
   sourceUrl: string
   sourceTitle: string
+  sourceIcon?: string
   type: 'text' | 'image' | 'link' | 'unknown'
   content: string | null
+  linkTitle?: string
 }
 
 export default function DropZone({ projectId, children }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // 统一的 Favicon 获取逻辑
+  const getFaviconUrl = (url: string) => {
+    try {
+      const hostname = new URL(url).hostname
+      // 使用更可靠的 Google Favicon 服务，sz=128 获取更高清图标
+      return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`
+    } catch {
+      return undefined
+    }
+  }
 
   // 处理内容脚本传来的自定义数据
   const handleWebCanvasPayload = async (jsonString: string) => {
@@ -23,15 +36,20 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       const payload: WebCanvasPayload = JSON.parse(jsonString)
       console.log('[WebCanvas] Processing payload:', payload)
 
+      const sourceIcon = payload.sourceIcon || getFaviconUrl(payload.sourceUrl)
+
       if (payload.type === 'text' && payload.content) {
-        await addTextNode(projectId, payload.content, payload.sourceUrl)
+        await addTextNode(projectId, payload.content, payload.sourceUrl, sourceIcon)
       } else if (payload.type === 'link' && payload.content) {
-        // 获取 Favicon
-        const urlObj = new URL(payload.content)
-        const favicon = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`
-        await addLinkNode(projectId, payload.content, payload.sourceTitle || payload.content, favicon)
+        // 对于链接，我们优先展示目标页面的图标
+        const targetIcon = getFaviconUrl(payload.content)
+        await addLinkNode(
+          projectId, 
+          payload.content, 
+          payload.linkTitle || payload.sourceTitle || payload.content, 
+          targetIcon
+        )
       } else if (payload.type === 'image' && payload.content) {
-        // 图片 URL，需要下载
         await downloadAndSaveImage(payload.content, payload.sourceUrl)
       }
     } catch (e) {
@@ -84,7 +102,22 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
     setIsDragging(false)
 
     // 1. 优先检查自定义 WebCanvas 数据
-    const customData = e.dataTransfer.getData('application/webcanvas-payload')
+    let customData = e.dataTransfer.getData('application/webcanvas-payload')
+    
+    // 如果 dataTransfer 中没有数据（可能是跨域限制或网站拦截），尝试从 Background 获取缓存的 payload
+    if (!customData) {
+      try {
+        const response = await chrome.runtime.sendMessage({ action: 'getDragPayload' })
+        if (response?.success && response.payload) {
+          console.log('[WebCanvas] Recovered payload from background:', response.payload)
+          await handleWebCanvasPayload(JSON.stringify(response.payload))
+          return
+        }
+      } catch (err) {
+        console.warn('[WebCanvas] Failed to get payload from background:', err)
+      }
+    }
+
     if (customData) {
       await handleWebCanvasPayload(customData)
       return
@@ -110,9 +143,8 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       } else {
         // 普通链接
         try {
-          const urlObj = new URL(url)
-          const favicon = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`
-          await addLinkNode(projectId, url, url, favicon)
+          const targetIcon = getFaviconUrl(url)
+          await addLinkNode(projectId, url, url, targetIcon)
         } catch {
           // 不是有效 URL，当做文本处理
           await addTextNode(projectId, url)
@@ -124,7 +156,15 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
     // 4. 纯文本
     const text = e.dataTransfer.getData('text/plain')
     if (text) {
-      await addTextNode(projectId, text)
+      const urlMatch = text.match(/^https?:\/\/[^\s]+$/)
+      if (urlMatch) {
+        const targetIcon = getFaviconUrl(text)
+        await addLinkNode(projectId, text, text, targetIcon)
+      } else {
+        // 如果是从网页拖拽的纯文本，虽然没有 payload，但我们可以尝试获取来源 URL 的 Favicon
+        // 注意：这里的 context 比较受限，所以 payload 才是最稳的
+        await addTextNode(projectId, text)
+      }
     }
   }, [projectId])
 
@@ -151,14 +191,14 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       e.preventDefault() // 阻止默认粘贴，防止粘贴到不可见区域
       
       // 简单判断是链接还是文本
-      try {
-        new URL(text) // 测试是否为 URL
-        await addLinkNode(projectId, text, text, `https://www.google.com/s2/favicons?domain=${new URL(text).hostname}&sz=64`)
-      } catch {
+      if (text.match(/^https?:\/\/[^\s]+$/)) {
+        const targetIcon = getFaviconUrl(text)
+        await addLinkNode(projectId, text, text, targetIcon)
+      } else {
         await addTextNode(projectId, text)
       }
     }
-  }, [projectId])
+  }, [projectId, getFaviconUrl])
 
   // 设置全局粘贴监听
   useEffect(() => {

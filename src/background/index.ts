@@ -78,6 +78,8 @@ async function handleImageDownload(
 
 console.log('[WebCanvas] Background service worker started')
 
+let lastDragPayload: any = null
+
 // Open side panel on extension icon click
 chrome.action.onClicked.addListener((tab) => {
   if (tab.id) {
@@ -105,8 +107,27 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     const domain = new URL(request.url).hostname
     sendResponse({
       success: true,
-      favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+      favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
     })
+    return false
+  }
+
+  if (request.action === 'setDragPayload') {
+    lastDragPayload = request.payload
+    // 设置一个过期时间，防止干扰后续无关拖拽（比如 5 秒后过期）
+    setTimeout(() => {
+      if (lastDragPayload === request.payload) {
+        lastDragPayload = null
+      }
+    }, 5000)
+    sendResponse({ success: true })
+    return false
+  }
+
+  if (request.action === 'getDragPayload') {
+    sendResponse({ success: true, payload: lastDragPayload })
+    // 获取后立即清除，确保单次有效性
+    lastDragPayload = null
     return false
   }
 })
