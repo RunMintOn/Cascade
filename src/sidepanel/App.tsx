@@ -57,7 +57,7 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <CardStream 
           projectId={currentProject.id!} 
           onDelete={handleDeleteNode}

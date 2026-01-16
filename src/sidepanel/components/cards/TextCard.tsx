@@ -175,10 +175,10 @@ export default function TextCard({
       {/* Content */}
       <div className="relative">
         {isEditing ? (
-          <div className="grid">
+          <div className="grid w-full max-w-full">
             {/* Ghost element for auto-sizing */}
             <div
-              className="invisible whitespace-pre-wrap break-words text-sm font-sans leading-relaxed pointer-events-none"
+              className="invisible whitespace-pre-wrap break-all text-sm font-sans leading-relaxed pointer-events-none"
               style={{ 
                 gridArea: '1 / 1 / 2 / 2',
                 padding: '0',
@@ -195,7 +195,7 @@ export default function TextCard({
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
               spellCheck={false}
-              className="w-full text-sm font-sans text-slate-700 bg-transparent border-none focus:ring-0 p-0 resize-none overflow-hidden block shadow-none outline-none"
+              className="w-full text-sm font-sans text-slate-700 bg-transparent border-none focus:ring-0 p-0 resize-none overflow-hidden block shadow-none outline-none break-all"
               style={{ 
                 gridArea: '1 / 1 / 2 / 2',
                 boxShadow: 'none', 
@@ -212,7 +212,7 @@ export default function TextCard({
         ) : (
           <div
             onDoubleClick={handleEnterEdit}
-            className={`text-sm whitespace-pre-wrap break-words leading-relaxed transition-all duration-300 rounded-md -mx-1 px-1 ${
+            className={`text-sm whitespace-pre-wrap break-all max-w-full leading-relaxed transition-all duration-300 rounded-md -mx-1 px-1 ${
               !expanded && isLongText ? 'line-clamp-4' : ''
             } ${expanded || !isLongText ? 'hover:bg-slate-50 cursor-text' : ''} ${
               isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'
