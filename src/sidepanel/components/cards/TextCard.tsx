@@ -20,14 +20,12 @@ export default function TextCard({
 }: TextCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [editText, setEditText] = useState(text)
   const [iconError, setIconError] = useState(false)
   const [isShowingOriginal, setIsShowingOriginal] = useState(false)
   const [hasEdited, setHasEdited] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const isSavingRef = useRef(false)
   const lastSaveTimeRef = useRef(0)
-  const cursorOffsetRef = useRef<number | null>(null)
   
   // Fetch node data to get hasEdited status
   useEffect(() => {
@@ -43,66 +41,62 @@ export default function TextCard({
 
   const lines = text.split('\n')
   const isLongText = lines.length > 4 || text.length > 300
-
+  
   // Update local state when prop changes
   useEffect(() => {
     if (!isEditing) {
-      setEditText(text)
+      if (contentRef.current) {
+        contentRef.current.innerText = isShowingOriginal ? (originalText || text) : text
+      }
     }
-  }, [text, isEditing])
+  }, [text, isEditing, isShowingOriginal, originalText])
 
-  // Focus textarea when entering edit mode
+  // Focus and setup contentEditable when entering edit mode
   useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus({ preventScroll: true })
+    if (isEditing && contentRef.current) {
+      const el = contentRef.current
+      el.focus()
       
-      const len = editText.length
-      // 如果是通过双击进入，尝试根据点击位置定位光标
-      // 否则（如通过按钮）默认定位到末尾
-      const pos = cursorOffsetRef.current !== null ? cursorOffsetRef.current : len
-      textareaRef.current.setSelectionRange(pos, pos)
-      
-      // 重置，确保下次如果是按钮进入，默认还是末尾
-      cursorOffsetRef.current = null
+      // 如果是通过双击进入，浏览器通常会自动处理光标位置
+      // 但为了保险，如果没有选区，我们将光标放到最后
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount === 0) {
+        const range = document.createRange()
+        range.selectNodeContents(el)
+        range.collapse(false) // false means end of range
+        selection.removeAllRanges()
+        selection.addRange(range)
+      }
     }
   }, [isEditing])
 
-  const handleEnterEdit = useCallback((e?: React.MouseEvent) => {
+  const handleEnterEdit = useCallback(() => {
     // 防止保存瞬间的布局抖动触发双击重新进入
     if (Date.now() - lastSaveTimeRef.current < 300) return
     
-    // 获取精确的光标位置
-    if (e && e.type === 'dblclick') {
-      const range = document.caretRangeFromPoint(e.clientX, e.clientY)
-      if (range && range.startContainer) {
-        // 如果点击的是文本节点，直接取 offset
-        if (range.startContainer.nodeType === Node.TEXT_NODE) {
-          cursorOffsetRef.current = range.startOffset
-        } else {
-          // 如果点击的是容器（比如行尾或空白处），尝试找到最近的文本位置
-          cursorOffsetRef.current = editText.length
-        }
-      }
-    } else {
-      cursorOffsetRef.current = null
-    }
-
     // 如果在查看原文，先切换回编辑版
     if (isShowingOriginal) {
       setIsShowingOriginal(false)
+      // 这里的副作用会在 useEffect 中处理内容更新
     }
+    
     setIsEditing(true)
-  }, [isShowingOriginal, editText.length])
+  }, [isShowingOriginal])
   
   const handleSave = useCallback(async () => {
-    if (isSavingRef.current) return
+    if (isSavingRef.current || !contentRef.current) return
     
-    const trimmed = editText.trim()
-    const currentText = text  // Use prop 'text' for comparison
+    const currentContent = contentRef.current.innerText
+    // 处理可能的尾部多余换行（某些浏览器 contentEditable 可能会在末尾加换行）
+    const trimmed = currentContent.replace(/\n$/, '').trim() === '' ? '' : currentContent
     
-    // 如果内容没变（包括查看原文时的回退），直接关闭编辑
+    const currentText = text
+    
+    // 如果内容没变，直接关闭编辑
     if (trimmed === currentText) {
       setIsEditing(false)
+      // 恢复显示内容（防止编辑时产生的临时换行等影响）
+      if (contentRef.current) contentRef.current.innerText = currentText
       return
     }
     
@@ -112,15 +106,37 @@ export default function TextCard({
       lastSaveTimeRef.current = Date.now()
       setIsEditing(false)
     } catch (err) {
-      console.error('[WebCanvas] Save failed:', err)
+      console.error('[WebCanvas] Save failed:', err)     // 恢复原始内容
+      if (contentRef.current) contentRef.current.innerText = text
     } finally {
       isSavingRef.current = false
     }
-  }, [id, editText, text])
+  }, [id, text])
+
+  const handleInput = useCallback(() => {
+    // 可以在这里做自动调整高度等操作（如果需要），但在 contentEditable div 中通常不需要
+    // 我们不更新 React state 以避免 re-render 导致光标跳动
+  }, [])
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const text = e.clipboardData.getData('text/plain')
+    if (text) {
+      // 插入纯文本
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        selection.deleteFromDocument()
+        selection.getRangeAt(0).insertNode(document.createTextNode(text))
+        selection.collapseToEnd()
+      } else {
+        // Fallback
+        document.execCommand('insertText', false, text)
+      }
+    }
+  }, [])
 
   const handleBlur = useCallback((e: React.FocusEvent) => {
     // 如果相关联的焦点目标是“完成”按钮，则忽略 blur
-    // 因为按钮的 onClick 会处理保存逻辑，避免重复触发
     if (e.relatedTarget && (e.relatedTarget as HTMLElement).closest('[data-action="save-text"]')) {
       return
     }
@@ -199,61 +215,32 @@ export default function TextCard({
       )}
 
       {/* Content */}
-      <div className="relative grid w-full max-w-full">
-        {/* Layer 1: Display / Ghost Element */}
-        <div
-          onDoubleClick={handleEnterEdit}
-          className={`
-            text-sm font-sans leading-relaxed whitespace-pre-wrap break-all 
-            -mx-1 px-1 rounded-md transition-opacity duration-200
-            ${isEditing ? 'opacity-0 pointer-events-none' : 'opacity-100'} 
-            ${!isEditing && !expanded && isLongText ? 'line-clamp-4' : ''}
-            ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-text' : ''}
-            ${!isEditing && isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'}
-          `}
-          style={{
-            gridArea: '1 / 1 / 2 / 2',
-            lineHeight: '1.625',
-            fontSize: '0.875rem',
-            // Ensure specific padding/margin matches textarea
-            margin: '0 -0.25rem',
-            padding: '0 0.25rem',
-            minHeight: '1.625em'
-          }}
-        >
-          {isEditing 
-            ? (editText + (editText.endsWith('\n') ? ' ' : '')) 
-            : (isShowingOriginal ? originalText : text)
-          }
-        </div>
-
-        {/* Layer 2: Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          spellCheck={false}
-          disabled={!isEditing}
-          className={`
-            w-full h-full text-sm font-sans text-slate-700 bg-transparent border-none 
-            focus:ring-0 resize-none overflow-hidden block shadow-none outline-none break-all
-            transition-opacity duration-200
-            ${isEditing ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}
-          `}
-          style={{ 
-            gridArea: '1 / 1 / 2 / 2',
-            boxShadow: 'none', 
-            outline: 'none',
-            minHeight: '1.625em',
-            lineHeight: '1.625',
-            fontSize: '0.875rem',
-            margin: '0 -0.25rem', // Match -mx-1
-            padding: '0 0.25rem', // Match px-1
-            border: 'none'
-          }}
-        />
+      <div 
+        ref={contentRef}
+        contentEditable={isEditing}
+        suppressContentEditableWarning={true}
+        onDoubleClick={handleEnterEdit}
+        onInput={handleInput}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        onPaste={handlePaste}
+        className={`
+          w-full max-w-full text-sm font-sans leading-relaxed whitespace-pre-wrap break-all 
+          -mx-1 px-1 rounded-md transition-all duration-200 outline-none
+          ${!isEditing && !expanded && isLongText ? 'line-clamp-4' : ''}
+          ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-text' : ''}
+          ${!isEditing && isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'}
+          ${isEditing ? 'cursor-text' : ''}
+        `}
+        style={{
+          lineHeight: '1.625',
+          fontSize: '0.875rem',
+          margin: '0 -0.25rem',
+          padding: '0 0.25rem',
+          minHeight: '1.625em'
+        }}
+      >
+        {isShowingOriginal ? originalText : text}
       </div>
 
       {/* Actions Row */}
