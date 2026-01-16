@@ -199,58 +199,61 @@ export default function TextCard({
       )}
 
       {/* Content */}
-      <div className="relative">
-        {isEditing ? (
-          <div className="grid w-full max-w-full">
-            {/* Ghost element for auto-sizing */}
-            <div
-              className="invisible whitespace-pre-wrap break-all text-sm font-sans leading-relaxed pointer-events-none -mx-1 px-1"
-              style={{ 
-                gridArea: '1 / 1 / 2 / 2',
-                margin: '0 -0.25rem', // Match -mx-1
-                padding: '0 0.25rem', // Match px-1
-                minHeight: '1.625em'
-              }}
-            >
-              {editText + (editText.endsWith('\n') ? ' ' : '')}
-            </div>
-            <textarea
-              ref={textareaRef}
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
-              spellCheck={false}
-              className="w-full text-sm font-sans text-slate-700 bg-transparent border-none focus:ring-0 resize-none overflow-hidden block shadow-none outline-none break-all"
-              style={{ 
-                gridArea: '1 / 1 / 2 / 2',
-                boxShadow: 'none', 
-                outline: 'none',
-                minHeight: '1.625em',
-                lineHeight: '1.625',
-                fontSize: '0.875rem',
-                margin: '0 -0.25rem', // Match -mx-1
-                padding: '0 0.25rem', // Match px-1
-                border: 'none'
-              }}
-            />
-          </div>
-        ) : (
-          <div
-            onDoubleClick={handleEnterEdit}
-            className={`text-sm whitespace-pre-wrap break-all max-w-full leading-relaxed transition-all duration-300 rounded-md -mx-1 px-1 ${
-              !expanded && isLongText ? 'line-clamp-4' : ''
-            } ${expanded || !isLongText ? 'hover:bg-slate-50 cursor-text' : ''} ${
-              isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'
-            }`}
-            style={{
-              lineHeight: '1.625',
-              fontSize: '0.875rem'
-            }}
-          >
-            {isShowingOriginal ? originalText : text}
-          </div>
-        )}
+      <div className="relative grid w-full max-w-full">
+        {/* Layer 1: Display / Ghost Element */}
+        <div
+          onDoubleClick={handleEnterEdit}
+          className={`
+            text-sm font-sans leading-relaxed whitespace-pre-wrap break-all 
+            -mx-1 px-1 rounded-md transition-opacity duration-200
+            ${isEditing ? 'opacity-0 pointer-events-none' : 'opacity-100'} 
+            ${!isEditing && !expanded && isLongText ? 'line-clamp-4' : ''}
+            ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-text' : ''}
+            ${!isEditing && isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'}
+          `}
+          style={{
+            gridArea: '1 / 1 / 2 / 2',
+            lineHeight: '1.625',
+            fontSize: '0.875rem',
+            // Ensure specific padding/margin matches textarea
+            margin: '0 -0.25rem',
+            padding: '0 0.25rem',
+            minHeight: '1.625em'
+          }}
+        >
+          {isEditing 
+            ? (editText + (editText.endsWith('\n') ? ' ' : '')) 
+            : (isShowingOriginal ? originalText : text)
+          }
+        </div>
+
+        {/* Layer 2: Textarea */}
+        <textarea
+          ref={textareaRef}
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          spellCheck={false}
+          disabled={!isEditing}
+          className={`
+            w-full h-full text-sm font-sans text-slate-700 bg-transparent border-none 
+            focus:ring-0 resize-none overflow-hidden block shadow-none outline-none break-all
+            transition-opacity duration-200
+            ${isEditing ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'}
+          `}
+          style={{ 
+            gridArea: '1 / 1 / 2 / 2',
+            boxShadow: 'none', 
+            outline: 'none',
+            minHeight: '1.625em',
+            lineHeight: '1.625',
+            fontSize: '0.875rem',
+            margin: '0 -0.25rem', // Match -mx-1
+            padding: '0 0.25rem', // Match px-1
+            border: 'none'
+          }}
+        />
       </div>
 
       {/* Actions Row */}
