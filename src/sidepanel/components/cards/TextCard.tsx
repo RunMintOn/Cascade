@@ -215,32 +215,43 @@ export default function TextCard({
       )}
 
       {/* Content */}
-      <div 
-        ref={contentRef}
-        contentEditable={isEditing}
-        suppressContentEditableWarning={true}
-        onDoubleClick={handleEnterEdit}
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-        onPaste={handlePaste}
-        className={`
-          w-full max-w-full text-sm font-sans leading-relaxed whitespace-pre-wrap break-all 
-          -mx-1 px-1 rounded-md transition-all duration-200 outline-none
-          ${!isEditing && !expanded && isLongText ? 'line-clamp-4' : ''}
-          ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-text' : ''}
-          ${!isEditing && isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'}
-          ${isEditing ? 'cursor-text' : ''}
-        `}
-        style={{
-          lineHeight: '1.625',
-          fontSize: '0.875rem',
-          margin: '0 -0.25rem',
-          padding: '0 0.25rem',
-          minHeight: '1.625em'
-        }}
-      >
-        {isShowingOriginal ? originalText : text}
+      <div className="relative">
+        {isEditing && (
+          <div 
+            className="absolute -inset-3 bg-blue-50/40 border border-dashed border-blue-300 rounded-md" 
+            onMouseDown={(e) => {
+              e.preventDefault()
+              contentRef.current?.focus()
+            }}
+          />
+        )}
+        <div 
+          ref={contentRef}
+          contentEditable={isEditing}
+          suppressContentEditableWarning={true}
+          onDoubleClick={handleEnterEdit}
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          onPaste={handlePaste}
+          className={`
+            w-full max-w-full text-sm font-sans leading-relaxed whitespace-pre-wrap break-all 
+            -mx-1 px-1 rounded-md transition-all duration-200 outline-none relative z-10
+            ${!isEditing && !expanded && isLongText ? 'line-clamp-4' : ''}
+            ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-text' : ''}
+            ${!isEditing && isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'}
+            ${isEditing ? 'cursor-text' : ''}
+          `}
+          style={{
+            lineHeight: '1.625',
+            fontSize: '0.875rem',
+            margin: '0 -0.25rem',
+            padding: '0 0.25rem',
+            minHeight: '1.625em'
+          }}
+        >
+          {isShowingOriginal ? originalText : text}
+        </div>
       </div>
 
       {/* Actions Row */}
