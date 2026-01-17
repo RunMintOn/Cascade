@@ -241,27 +241,34 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
         setIsDragging(false)
       }}
       onDrop={handleDrop}
-      className={`min-h-full transition-all duration-500 relative ${
+      className={`min-h-full transition-all duration-300 relative border ${
         isDragging 
-          ? 'animate-sci-fi-glow bg-blue-50/10' 
-          : ''
+          ? 'animate-neon-breathe bg-slate-900/20' 
+          : 'border-transparent'
       }`}
     >
       {/* Full Screen Overlay when Dragging */}
       {isDragging && (
         <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-          {/* Sci-fi center prompt */}
-          <div className="relative p-8 rounded-3xl bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_0_60px_rgba(37,99,235,0.3)] flex flex-col items-center justify-center animate-in zoom-in-95 duration-300 overflow-hidden">
-            {/* Glossy shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-50"></div>
+          {/* Holographic/Neon center prompt */}
+          <div className="relative p-8 flex flex-col items-center justify-center animate-in zoom-in-95 duration-200">
+            {/* Holographic background circle */}
+            <div className="absolute inset-0 rounded-full bg-blue-500/10 blur-xl animate-pulse"></div>
             
-            <div className="relative z-10 w-20 h-20 bg-gradient-to-tr from-blue-500 to-blue-400 text-white rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 animate-bounce">
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+            {/* Icon with glowing ring */}
+            <div className="relative z-10 w-20 h-20 rounded-full border-2 border-blue-400/50 bg-slate-900/50 flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-bounce backdrop-blur-sm">
+              <svg className="w-10 h-10 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <p className="relative z-10 text-blue-600 font-bold text-xl drop-shadow-sm">释放以添加内容</p>
-            <p className="relative z-10 text-blue-500/80 text-sm mt-2 font-medium">支持文本、图片和链接</p>
+            
+            {/* Glowing Text */}
+            <p className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-white font-bold text-2xl tracking-widest drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]">
+              释放添加
+            </p>
+            <p className="relative z-10 text-blue-400/80 text-sm mt-3 font-mono tracking-wider uppercase">
+              Drop Content Here
+            </p>
           </div>
         </div>
       )}
