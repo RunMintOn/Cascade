@@ -241,23 +241,27 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
         setIsDragging(false)
       }}
       onDrop={handleDrop}
-      className={`min-h-full transition-all duration-200 relative border-4 ${
+      className={`min-h-full transition-all duration-500 relative ${
         isDragging 
-          ? 'border-blue-600 bg-blue-50/30 animate-pulse-fast-blue' 
-          : 'border-transparent'
+          ? 'animate-sci-fi-glow bg-blue-50/10' 
+          : ''
       }`}
     >
       {/* Full Screen Overlay when Dragging */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px] pointer-events-none">
-          <div className="w-64 h-48 border-4 border-blue-400 border-dashed rounded-2xl flex flex-col items-center justify-center bg-blue-50/50 animate-in zoom-in-95 duration-200 shadow-xl">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 animate-bounce shadow-sm">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+          {/* Sci-fi center prompt */}
+          <div className="relative p-8 rounded-3xl bg-white/20 backdrop-blur-md border border-white/40 shadow-[0_0_60px_rgba(37,99,235,0.3)] flex flex-col items-center justify-center animate-in zoom-in-95 duration-300 overflow-hidden">
+            {/* Glossy shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-50"></div>
+            
+            <div className="relative z-10 w-20 h-20 bg-gradient-to-tr from-blue-500 to-blue-400 text-white rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 animate-bounce">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <p className="text-blue-600 font-bold text-lg">释放以添加内容</p>
-            <p className="text-blue-400 text-xs mt-1">支持文本、图片和链接</p>
+            <p className="relative z-10 text-blue-600 font-bold text-xl drop-shadow-sm">释放以添加内容</p>
+            <p className="relative z-10 text-blue-500/80 text-sm mt-2 font-medium">支持文本、图片和链接</p>
           </div>
         </div>
       )}
