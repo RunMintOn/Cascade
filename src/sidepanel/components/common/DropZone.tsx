@@ -232,10 +232,27 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
-      className={`min-h-full transition-colors ${
-        isDragging ? 'bg-blue-50 ring-2 ring-blue-400 ring-inset' : ''
+      className={`min-h-full transition-all duration-200 relative ${
+        isDragging 
+          ? 'bg-blue-50/30 ring-2 ring-blue-500 animate-pulse-fast-blue' 
+          : ''
       }`}
     >
+      {/* Full Screen Overlay when Dragging */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px] pointer-events-none">
+          <div className="w-64 h-48 border-4 border-blue-400 border-dashed rounded-2xl flex flex-col items-center justify-center bg-blue-50/50 animate-in zoom-in-95 duration-200 shadow-xl">
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 animate-bounce shadow-sm">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <p className="text-blue-600 font-bold text-lg">释放以添加内容</p>
+            <p className="text-blue-400 text-xs mt-1">支持文本、图片和链接</p>
+          </div>
+        </div>
+      )}
+
       {isProcessing && (
         <div className="fixed top-0 left-0 w-full h-1 bg-blue-100 overflow-hidden z-50">
           <div className="h-full bg-blue-500 animate-progress"></div>
