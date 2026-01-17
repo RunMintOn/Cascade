@@ -4,6 +4,8 @@ import { addTextNode, addImageNode, addLinkNode } from '../../services/db'
 interface DropZoneProps {
   projectId: number
   children: ReactNode
+  onSuccess?: () => void
+  isInboxMode?: boolean
 }
 
 interface WebCanvasPayload {
@@ -15,9 +17,14 @@ interface WebCanvasPayload {
   linkTitle?: string
 }
 
-export default function DropZone({ projectId, children }: DropZoneProps) {
+export default function DropZone({ projectId, children, onSuccess, isInboxMode = false }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // Wrap db operations with onSuccess callback
+  const handleSuccess = useCallback(() => {
+    if (onSuccess) onSuccess()
+  }, [onSuccess])
 
   // 统一的 Favicon 获取逻辑
   const getFaviconUrl = (url: string) => {
@@ -52,6 +59,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       } else if (payload.type === 'image' && payload.content) {
         await downloadAndSaveImage(payload.content, payload.sourceUrl)
       }
+      handleSuccess()
     } catch (e) {
       console.error('[WebCanvas] Failed to parse payload:', e)
     }
@@ -72,22 +80,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
         console.error('[WebCanvas] Image download failed:', response.error)
         alert('图片下载失败: ' + response.error)
       } else {
-        // 注意：Background script 不能直接操作 IndexedDB，它会把 base64 发回来
-        // 或者我们在 Background 里处理完后，这里其实只需要等待成功即可
-        // 但目前的架构是 Background -> 发送消息 'imageDownloaded' -> 谁接收？
-        // 让我们检查一下 Background 的逻辑
-        
-        // 修正：Background 脚本在下载成功后会广播 'imageDownloaded' 消息
-        // 我们应该监听这个消息来保存到 DB吗？
-        // 不，通常 content script 或 side panel 发起请求后，应该由发起方处理数据
-        
-        // 让我们查看 Background 的实现，看看它是怎么返回数据的
-        // 它返回的是 { success: true }，并没有返回数据
-        // 但是它发送了一个 chrome.runtime.sendMessage...
-        // 这意味着我们需要在 App.tsx 或某个地方监听这个消息
-        
-        // 让我们暂时在这里处理 base64 的保存，如果 background script 返回数据的话
-        // 目前看来 background 确实把 base64 通过消息广播出去了
+        // Image download success
       }
     } catch (e) {
       console.error('[WebCanvas] Download error:', e)
@@ -131,6 +124,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
           await addImageNode(projectId, file, file.name)
         }
       }
+      handleSuccess()
       return
     }
 
@@ -140,14 +134,18 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       // 这是一个图片链接吗？
       if (url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
         await downloadAndSaveImage(url)
+        // Image download is async and handled separately, but we can trigger success for UI
+        handleSuccess()
       } else {
         // 普通链接
         try {
           const targetIcon = getFaviconUrl(url)
           await addLinkNode(projectId, url, url, targetIcon)
+          handleSuccess()
         } catch {
           // 不是有效 URL，当做文本处理
           await addTextNode(projectId, url)
+          handleSuccess()
         }
       }
       return
@@ -165,6 +163,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
         // 注意：这里的 context 比较受限，所以 payload 才是最稳的
         await addTextNode(projectId, text)
       }
+      handleSuccess()
     }
   }, [projectId])
 
@@ -182,6 +181,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
           await addImageNode(projectId, file, file.name)
         }
       }
+      handleSuccess()
       return
     }
 
@@ -197,6 +197,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       } else {
         await addTextNode(projectId, text)
       }
+      handleSuccess()
     }
   }, [projectId, getFaviconUrl])
 
@@ -217,6 +218,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
         const blob = await res.blob()
         
         await addImageNode(projectId, blob, request.fileName, request.sourceUrl)
+        handleSuccess()
       }
     }
     
@@ -245,23 +247,33 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
     >
       {/* Glow Effect Overlay (Top Layer) */}
       {isDragging && (
-        <div className="absolute inset-0 z-[100] pointer-events-none animate-neon-breathe rounded-lg"></div>
+        <div className={`absolute inset-0 z-[100] pointer-events-none rounded-lg ${
+          isInboxMode ? 'animate-neon-breathe-green' : 'animate-neon-breathe'
+        }`}></div>
       )}
 
       {/* Full Screen Overlay Content */}
       {isDragging && (
         <div className="fixed inset-0 z-[101] flex flex-col justify-end items-center pb-8 pointer-events-none">
           {/* Subtle bottom gradient to ensure text readability */}
-          <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-blue-900/40 to-transparent pointer-events-none"></div>
+          <div className={`fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t pointer-events-none ${
+            isInboxMode ? 'from-green-900/40' : 'from-blue-900/40'
+          } to-transparent`}></div>
 
           {/* Minimalist Bottom Pill Prompt */}
-          <div className="relative z-10 flex items-center gap-3 px-6 py-3 bg-blue-600/90 backdrop-blur-md rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] animate-in slide-in-from-bottom-4 duration-300 border border-blue-400/30">
+          <div className={`relative z-10 flex items-center gap-3 px-6 py-3 backdrop-blur-md rounded-full shadow-[0_0_20px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom-4 duration-300 border ${
+            isInboxMode 
+              ? 'bg-green-600/90 shadow-green-500/30 border-green-400/30' 
+              : 'bg-blue-600/90 shadow-blue-500/30 border-blue-400/30'
+          }`}>
             <div className="w-5 h-5 rounded-full border-2 border-white/80 flex items-center justify-center animate-bounce">
               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <span className="text-white font-medium tracking-wide text-sm drop-shadow-sm">释放以添加内容</span>
+            <span className="text-white font-medium tracking-wide text-sm drop-shadow-sm">
+              {isInboxMode ? '释放保存到收集箱' : '释放以添加内容'}
+            </span>
           </div>
         </div>
       )}

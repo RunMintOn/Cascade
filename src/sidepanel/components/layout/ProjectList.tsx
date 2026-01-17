@@ -10,9 +10,17 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
   const [newProjectName, setNewProjectName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
 
-  const projects = useLiveQuery(() =>
-    db.projects.orderBy('updatedAt').reverse().toArray()
-  )
+  const projects = useLiveQuery(async () => {
+    // 获取所有项目
+    const allProjects = await db.projects.orderBy('updatedAt').reverse().toArray()
+    
+    // 分离 Inbox 和普通项目
+    const inbox = allProjects.find(p => p.isInbox)
+    const others = allProjects.filter(p => !p.isInbox)
+    
+    // Inbox 置顶
+    return inbox ? [inbox, ...others] : others
+  })
 
   const handleCreateProject = useCallback(async () => {
     if (!newProjectName.trim()) return
@@ -94,39 +102,64 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
       )}
 
       {/* Projects List */}
-      {projects.length === 0 && !isCreating ? (
-        <div className="text-center text-slate-500 py-8">
-          <p className="mb-2">还没有画板</p>
-          <p className="text-sm">点击上方按钮创建第一个画板</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {projects.map((project) => (
-            <div
-              key={project.id}
-              onClick={() => onSelectProject(project as Project)}
-              className="group p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-800 truncate">
-                    {project.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {new Date(project.updatedAt).toLocaleDateString('zh-CN')}
-                  </p>
-                </div>
+      <div className="space-y-3">
+        {projects.map((project) => (
+          <div
+            key={project.id}
+            onClick={() => onSelectProject(project)}
+            className={`group relative p-4 rounded-xl border transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md ${
+              project.isInbox 
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-400' 
+                : 'bg-white border-slate-200 hover:border-blue-400'
+            }`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className={`font-semibold text-base mb-1 ${
+                  project.isInbox ? 'text-green-800' : 'text-slate-800'
+                }`}>
+                  {project.name}
+                  {project.isInbox && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                      默认
+                    </span>
+                  )}
+                </h3>
+                <p className={`text-xs ${
+                  project.isInbox ? 'text-green-600/70' : 'text-slate-400'
+                }`}>
+                  {new Date(project.updatedAt).toLocaleString()}
+                </p>
+              </div>
+              
+              {!project.isInbox && (
                 <button
                   onClick={(e) => handleDeleteProject(e, project.id!)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                  title="删除画板"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
-              </div>
+              )}
             </div>
-          ))}
+            
+            {project.isInbox && (
+              <div className="absolute top-2 right-2 text-green-400/20 pointer-events-none">
+                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {projects.length === 0 && !isCreating && (
+        <div className="text-center text-slate-500 py-8">
+          <p className="mb-2">还没有画板</p>
+          <p className="text-sm">点击上方按钮创建第一个画板</p>
         </div>
       )}
     </div>

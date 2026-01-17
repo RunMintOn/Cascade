@@ -21,6 +21,23 @@ if (!rootElement) {
     console.log('[WebCanvas] React app mounted successfully')
   } catch (error) {
     console.error('[WebCanvas] React mount failed:', error)
-    rootElement.innerHTML = `<div style="color: red; padding: 20px;">Error: React mount failed: ${error}</div>`
+    // 尝试打印更详细的错误信息
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
+    rootElement.innerHTML = `<div style="color: red; padding: 20px;">
+      <h2>Something went wrong</h2>
+      <pre>${errorMessage}</pre>
+    </div>`
   }
 }
+
+// Global error handler
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[WebCanvas] Unhandled promise rejection:', event.reason)
+  const errorMessage = event.reason instanceof Error ? event.reason.message : JSON.stringify(event.reason)
+  if (document.getElementById('root')) {
+    document.getElementById('root')!.innerHTML += `<div style="color: red; padding: 20px; border-top: 1px solid #ccc;">
+      <h3>Unhandled Rejection</h3>
+      <pre>${errorMessage}</pre>
+    </div>`
+  }
+})

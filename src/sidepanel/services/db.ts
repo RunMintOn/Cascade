@@ -6,6 +6,7 @@ export interface Project {
   id?: number
   name: string
   updatedAt: number
+  isInbox?: boolean // 标记是否为收集箱
 }
 
 export interface CanvasNode {
@@ -34,15 +35,33 @@ class WebCanvasDB extends Dexie {
   constructor() {
     super('WebCanvasDB')
     
-    this.version(1).stores({
-      // ⚠️ IMPORTANT: Do NOT index fileData (Blob) - it will crash the database!
-      projects: '++id, name, updatedAt',
+    // Version 2: Added isInbox to projects
+    this.version(2).stores({
+      projects: '++id, name, updatedAt, isInbox',
       nodes: '++id, projectId, type, order, createdAt',
     })
+
+    // Keep version 1 for backward compatibility documentation (optional)
+    // this.version(1).stores({ ... })
   }
 }
 
 export const db = new WebCanvasDB()
+
+// ========== Initialization ==========
+
+// 确保 Inbox 存在
+export async function ensureInboxExists() {
+  const inbox = await db.projects.where('isInbox').equals(1).first()
+  if (!inbox) {
+    console.log('[WebCanvasDB] Creating Inbox project...')
+    await db.projects.add({
+      name: '收集箱',
+      updatedAt: Date.now(),
+      isInbox: true
+    })
+  }
+}
 
 // ========== Helper Functions ==========
 
