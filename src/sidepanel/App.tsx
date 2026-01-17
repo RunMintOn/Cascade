@@ -6,29 +6,27 @@ import StickyHeader from './components/layout/StickyHeader'
 import { db, ensureInboxExists } from './services/db'
 import { exportToCanvas } from './services/exporter'
 import DropZone from './components/common/DropZone'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 export default function App() {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isExporting, setIsExporting] = useState(false)
-  const [inboxId, setInboxId] = useState<number | null>(null)
   const [showToast, setShowToast] = useState(false)
 
-  // 获取 Inbox ID
+  // 使用 useLiveQuery 响应式查询 Inbox
+  const inbox = useLiveQuery(() =>
+    db.projects.filter(p => p.isInbox === true).first()
+  )
+
+  // 确保 Inbox 存在（初始化时）
   useEffect(() => {
-    const fetchInboxId = async () => {
-      try {
-        await ensureInboxExists()
-        
-        const inbox = await db.projects.where('isInbox').equals(1).first()
-        if (inbox && inbox.id) {
-          setInboxId(inbox.id)
-        }
-      } catch (err) {
-        console.error('[WebCanvas] Failed to initialize Inbox:', err)
-      }
-    }
-    fetchInboxId()
+    ensureInboxExists().catch(err => {
+      console.error('[WebCanvas] Failed to initialize Inbox:', err)
+    })
   }, [])
+
+  // 从响应式查询结果获取 inboxId
+  const inboxId = inbox?.id || null
 
   useEffect(() => {
     console.log('[WebCanvas] App component mounted')
@@ -88,13 +86,21 @@ export default function App() {
         {/* Toast */}
         <Toast />
 
-        {/* 
-            全局拖拽区域 (Inbox 模式) 
-            只有当 inboxId 存在时才启用 DropZone
+        {/*
+            全局拖拽区域 (Inbox 模式)
+            加载中 / 错误 / DropZone 三种状态
         */}
-        {inboxId ? (
-          <DropZone 
-            projectId={inboxId} 
+        {inbox === undefined ? (
+          // 加载状态
+          <div className="flex-1 flex items-center justify-center text-slate-500">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-2"></div>
+              <p>初始化中...</p>
+            </div>
+          </div>
+        ) : inboxId ? (
+          <DropZone
+            projectId={inboxId}
             isInboxMode={true}
             onSuccess={handleInboxSuccess}
           >
@@ -103,7 +109,16 @@ export default function App() {
             </div>
           </DropZone>
         ) : (
-          <ProjectList onSelectProject={setCurrentProject} />
+          // 错误状态 - inbox 查询返回 null
+          <div className="flex-1 flex items-center justify-center text-red-500 p-4">
+            <div className="text-center">
+              <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="font-medium mb-1">收集箱初始化失败</p>
+              <p className="text-sm text-slate-400">请刷新页面重试</p>
+            </div>
+          </div>
         )}
       </div>
     )

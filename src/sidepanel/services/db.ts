@@ -52,7 +52,7 @@ export const db = new WebCanvasDB()
 
 // 确保 Inbox 存在
 export async function ensureInboxExists() {
-  const inbox = await db.projects.where('isInbox').equals(1).first()
+  const inbox = await db.projects.filter(p => p.isInbox === true).first()
   if (!inbox) {
     console.log('[WebCanvasDB] Creating Inbox project...')
     await db.projects.add({
