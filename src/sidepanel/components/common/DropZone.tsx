@@ -234,7 +234,7 @@ export default function DropZone({ projectId, children }: DropZoneProps) {
       onDrop={handleDrop}
       className={`min-h-full transition-all duration-200 relative ${
         isDragging 
-          ? 'bg-blue-50/30 ring-2 ring-blue-500 animate-pulse-fast-blue' 
+          ? 'bg-blue-50/30 animate-pulse-fast-blue' 
           : ''
       }`}
     >
