@@ -288,7 +288,7 @@ export default function DropZone({ projectId, children, onSuccess, isInboxMode =
         setIsDragging(false)
       }}
       onDrop={handleDrop}
-      className={`min-h-full transition-all duration-300 relative border border-transparent flex flex-col flex-1`}
+      className={`flex-1 transition-all duration-300 relative border border-transparent flex flex-col overflow-hidden`}
     >
       {/* Glow Effect Overlay (Top Layer) */}
       {isDragging && (

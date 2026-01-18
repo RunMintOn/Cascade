@@ -45,7 +45,7 @@ export default function CardStream({ projectId, onDelete }: CardStreamProps) {
   }
 
   return (
-    <div className="px-5 py-4 min-h-full">
+    <div className="px-5 py-4">
       {nodes.length === 0 ? (
         <div className="text-center text-slate-500 py-12">
           <div className="text-4xl mb-4">📋</div>

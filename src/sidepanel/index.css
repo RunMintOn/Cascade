@@ -13,16 +13,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+html, body {
+  height: 100%;
   margin: 0;
+  padding: 0;
+  overflow: hidden;
   min-width: 320px;
-  min-height: 100vh;
 }
 
 #root {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Scrollbar styling */
