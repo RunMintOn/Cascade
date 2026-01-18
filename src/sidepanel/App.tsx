@@ -80,6 +80,12 @@ export default function App() {
     setTimeout(() => setShowToast(false), 2000)
   }, [])
 
+  // 监听项目页面的成功事件
+  const handleProjectSuccess = useCallback(() => {
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 2000)
+  }, [])
+
   // 当不在项目中时（首页），我们使用 Inbox 的 ID 作为 DropZone 的 projectId
   // 这样就可以复用 DropZone 的逻辑！
 
@@ -145,12 +151,18 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden">
-        <CardStream 
-          projectId={currentProject.id!} 
-          onDelete={handleDeleteNode}
-        />
-      </main>
+      <DropZone
+        projectId={currentProject.id!}
+        isInboxMode={false}
+        onSuccess={handleProjectSuccess}
+      >
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <CardStream
+            projectId={currentProject.id!}
+            onDelete={handleDeleteNode}
+          />
+        </main>
+      </DropZone>
     </div>
   )
 }
