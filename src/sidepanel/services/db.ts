@@ -240,3 +240,29 @@ export async function updateTextNode(nodeId: number, newContent: string) {
     throw err
   }
 }
+
+// ========== Undo/Redo Functions ==========
+
+/**
+ * Restore a deleted node back to the database
+ * Used for undo functionality
+ */
+export async function restoreNode(node: Omit<CanvasNode, 'id'>): Promise<number> {
+  try {
+    console.log('[WebCanvasDB] restoreNode - type:', node.type, 'projectId:', node.projectId)
+
+    // Add node back to database
+    const result = await db.nodes.add(node)
+
+    if (result === undefined) {
+      throw new Error('Failed to restore node: returned ID is undefined')
+    }
+
+    console.log('[WebCanvasDB] Node restored successfully, ID:', result)
+    return result
+  } catch (err) {
+    console.error('[WebCanvasDB] Failed to restore node:', err)
+    throw err
+  }
+}
+

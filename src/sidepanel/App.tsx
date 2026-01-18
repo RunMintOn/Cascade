@@ -3,15 +3,19 @@ import type { Project } from './services/db'
 import ProjectList from './components/layout/ProjectList'
 import CardStream from './components/layout/CardStream'
 import StickyHeader from './components/layout/StickyHeader'
-import { db, ensureInboxExists } from './services/db'
+import { db, ensureInboxExists, restoreNode } from './services/db'
 import { exportToCanvas } from './services/exporter'
 import DropZone from './components/common/DropZone'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { UndoProvider } from './contexts/UndoContext'
+import { useUndo } from './contexts/UndoContext'
+import UndoToast from './components/common/UndoToast'
 
-export default function App() {
+function App() {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const { deletedNode, hideUndo } = useUndo()
 
   // Debug: Log when project changes
   useEffect(() => {
@@ -36,6 +40,53 @@ export default function App() {
   useEffect(() => {
     console.log('[WebCanvas] App component mounted')
   }, [])
+
+  // Handle Ctrl+Z (or Cmd+Z on Mac) for undo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && deletedNode) {
+        e.preventDefault()
+        e.stopPropagation()
+        performUndo()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [deletedNode])
+
+  // Handle undo event from UndoToast button click
+  useEffect(() => {
+    const handleUndoEvent = () => {
+      performUndo()
+    }
+
+    window.addEventListener('webcanvas-undo', handleUndoEvent)
+    return () => window.removeEventListener('webcanvas-undo', handleUndoEvent)
+  }, [deletedNode])
+
+  // Perform undo operation
+  const performUndo = useCallback(async () => {
+    if (!deletedNode) return
+
+    try {
+      console.log('[WebCanvas] Performing undo:', deletedNode)
+
+      // Remove 'id' field before restoring (it will be auto-generated)
+      const { id, ...nodeToRestore } = deletedNode
+
+      // Restore node to database
+      await restoreNode(nodeToRestore)
+
+      // Hide undo toast
+      hideUndo()
+
+      console.log('[WebCanvas] Undo successful')
+    } catch (err) {
+      console.error('[WebCanvas] Undo failed:', err)
+      alert('撤回失败: ' + (err instanceof Error ? err.message : '未知错误'))
+    }
+  }, [deletedNode, hideUndo])
 
   // 监听数据库变化，如果 Inbox 有新增内容，显示 Toast
   // 注意：这里简单起见，我们在 DropZone 成功添加后触发一个全局事件或者回调
@@ -93,7 +144,7 @@ export default function App() {
     return (
       <div className="relative h-screen bg-slate-50 flex flex-col">
         <StickyHeader title="我的画板" />
-        
+
         {/* Toast */}
         <Toast />
 
@@ -137,14 +188,14 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
-      <StickyHeader 
-        title={currentProject.name} 
-        showBack 
+      <StickyHeader
+        title={currentProject.name}
+        showBack
         showExport
         onBack={() => setCurrentProject(null)}
         onExport={handleExport}
       />
-      
+
       {isExporting && (
         <div className="fixed top-0 left-0 w-full h-1 bg-blue-100 overflow-hidden z-50">
           <div className="h-full bg-blue-500 animate-progress"></div>
@@ -166,3 +217,15 @@ export default function App() {
     </div>
   )
 }
+
+// Wrap App with UndoProvider
+function AppWithProvider() {
+  return (
+    <UndoProvider>
+      <App />
+      <UndoToast />
+    </UndoProvider>
+  )
+}
+
+export default AppWithProvider

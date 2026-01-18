@@ -58,6 +58,21 @@ body {
   100% { width: 100%; margin-left: 100%; }
 }
 
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
 @keyframes pulse-blue {
   0%, 100% {
     border-color: rgba(59, 130, 246, 0.6);

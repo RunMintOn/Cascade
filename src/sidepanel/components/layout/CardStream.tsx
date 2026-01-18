@@ -3,6 +3,7 @@ import { db } from '../../services/db'
 import TextCard from '../cards/TextCard'
 import ImageCard from '../cards/ImageCard'
 import LinkCard from '../cards/LinkCard'
+import { useUndo } from '../../contexts/UndoContext'
 
 interface CardStreamProps {
   projectId: number
@@ -14,11 +15,24 @@ export default function CardStream({ projectId, onDelete }: CardStreamProps) {
     () => db.nodes.where('projectId').equals(projectId).sortBy('order'),
     [projectId]
   )
+  const { setDeletedNode, showUndo } = useUndo()
 
   // Debug: Log when nodes change
   console.log('[WebCanvas CardStream] projectId:', projectId, 'nodes:', nodes, 'nodes.length:', nodes?.length || 0)
 
   const handleDelete = async (nodeId: number) => {
+    // Get the complete node data before deleting
+    const node = await db.nodes.get(nodeId)
+    if (!node) {
+      console.error('[WebCanvas CardStream] Node not found:', nodeId)
+      return
+    }
+
+    // Save node data for undo
+    setDeletedNode(node)
+    showUndo()
+
+    // Perform deletion
     await onDelete(nodeId)
   }
 
