@@ -32,7 +32,7 @@ export default function LinkCard({
       {/* Delete Button */}
       <button
         onClick={onDelete}
-        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-slate-100"
+        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-600 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full hover:shadow-lg active:scale-95"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

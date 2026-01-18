@@ -206,7 +206,7 @@ export default function TextCard({
       {!isEditing && (
         <button
           onClick={onDelete}
-          className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full bg-white shadow-md ring-2 ring-white hover:scale-110 active:scale-90 z-20"
+          className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-600 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full bg-white shadow-md hover:shadow-lg ring-2 ring-white hover:scale-110 active:scale-95 z-20"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
