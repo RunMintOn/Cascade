@@ -26,6 +26,7 @@ export default function TextCard({
   const contentRef = useRef<HTMLDivElement>(null)
   const isSavingRef = useRef(false)
   const lastSaveTimeRef = useRef(0)
+  const clickCoordRef = useRef<{ x: number; y: number } | null>(null)
   
   // Fetch node data to get hasEdited status
   useEffect(() => {
@@ -57,27 +58,36 @@ export default function TextCard({
       const el = contentRef.current
       el.focus()
       
-      // 如果是通过双击进入，浏览器通常会自动处理光标位置
-      // 但为了保险，如果没有选区，我们将光标放到最后
       const selection = window.getSelection()
-      if (selection && selection.rangeCount === 0) {
-        const range = document.createRange()
-        range.selectNodeContents(el)
-        range.collapse(false) // false means end of range
-        selection.removeAllRanges()
-        selection.addRange(range)
+      if (selection) {
+        if (clickCoordRef.current) {
+          const { x, y } = clickCoordRef.current
+          // @ts-ignore
+          const range = document.caretRangeFromPoint(x, y)
+          
+          if (range) {
+            selection.removeAllRanges()
+            selection.addRange(range)
+          }
+          clickCoordRef.current = null
+        } else if (selection.rangeCount === 0) {
+          const range = document.createRange()
+          range.selectNodeContents(el)
+          range.collapse(false)
+          selection.removeAllRanges()
+          selection.addRange(range)
+        }
       }
     }
   }, [isEditing])
 
-  const handleEnterEdit = useCallback(() => {
-    // 防止保存瞬间的布局抖动触发双击重新进入
+  const handleEnterEdit = useCallback((e: React.MouseEvent) => {
     if (Date.now() - lastSaveTimeRef.current < 300) return
     
-    // 如果在查看原文，先切换回编辑版
+    clickCoordRef.current = { x: e.clientX, y: e.clientY }
+    
     if (isShowingOriginal) {
       setIsShowingOriginal(false)
-      // 这里的副作用会在 useEffect 中处理内容更新
     }
     
     setIsEditing(true)
@@ -120,16 +130,15 @@ export default function TextCard({
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const text = e.clipboardData.getData('text/plain')
     if (text) {
-      // 插入纯文本
       const selection = window.getSelection()
       if (selection && selection.rangeCount > 0) {
         selection.deleteFromDocument()
         selection.getRangeAt(0).insertNode(document.createTextNode(text))
         selection.collapseToEnd()
       } else {
-        // Fallback
         document.execCommand('insertText', false, text)
       }
     }
@@ -238,7 +247,7 @@ export default function TextCard({
             w-full max-w-full text-sm font-sans leading-relaxed whitespace-pre-wrap break-all 
             -mx-1 px-1 rounded-md transition-all duration-200 outline-none relative z-10
             ${!isEditing && !expanded && isLongText ? 'line-clamp-4' : ''}
-            ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-text' : ''}
+            ${!isEditing && (expanded || !isLongText) ? 'hover:bg-slate-50 cursor-default' : ''}
             ${!isEditing && isShowingOriginal ? 'text-slate-500 bg-slate-50/50 italic' : 'text-slate-700'}
             ${isEditing ? 'cursor-text' : ''}
           `}
