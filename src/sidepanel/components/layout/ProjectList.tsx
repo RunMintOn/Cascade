@@ -125,9 +125,21 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
                 : 'bg-white border-slate-200 hover:border-blue-400'
             }`}
           >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className={`font-semibold text-base mb-1 ${
+            {!project.isInbox && (
+              <button
+                onClick={(e) => handleDeleteProject(e, project.id!)}
+                className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 w-7 h-7 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full bg-white shadow-md hover:shadow-lg ring-2 ring-white z-20"
+                title="删除画板"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+
+            <div className="flex justify-between items-center">
+              <div className="flex-1 min-w-0">
+                <h3 className={`font-semibold text-base mb-1 truncate ${
                   project.isInbox ? 'text-green-800' : 'text-slate-800'
                 }`}>
                   {project.name}
@@ -136,45 +148,34 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
                       默认
                     </span>
                   )}
-                  {/* Node count badge */}
-                  <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                    project.isInbox
-                      ? 'bg-green-200 text-green-800'
-                      : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {nodeCounts && nodeCounts[project.id!] !== undefined
-                      ? `${nodeCounts[project.id!]} 项`
-                      : '0 项'
-                    }
-                  </span>
                 </h3>
-                <p className={`text-xs ${
+                <p className={`text-[10px] ${
                   project.isInbox ? 'text-green-600/70' : 'text-slate-400'
                 }`}>
                   {new Date(project.updatedAt).toLocaleString()}
                 </p>
               </div>
-              
-              {!project.isInbox && (
-                <button
-                  onClick={(e) => handleDeleteProject(e, project.id!)}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
-                  title="删除画板"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            
-            {project.isInbox && (
-              <div className="absolute top-2 right-2 text-green-400/20 pointer-events-none">
-                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
+
+              <div className="flex items-center gap-3 flex-none ml-4">
+                {project.isInbox && (
+                  <div className="text-green-500/20 pointer-events-none">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </div>
+                )}
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${
+                  project.isInbox
+                    ? 'bg-green-200/50 text-green-800 border-green-200'
+                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                }`}>
+                  {nodeCounts && nodeCounts[project.id!] !== undefined
+                    ? `${nodeCounts[project.id!]} 项`
+                    : '0 项'
+                  }
+                </span>
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>
