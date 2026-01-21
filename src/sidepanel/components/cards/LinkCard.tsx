@@ -56,18 +56,8 @@ export default function LinkCard({
       </div>
 
       <button
-        onClick={handleDelete}
-        className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 opacity-0 group-hover/tr:opacity-100 hover:scale-110 active:scale-95 z-30 bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0] pointer-events-auto"
-        aria-label="Delete"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
-      <button
         onClick={handleCopy}
-        className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 opacity-0 group-hover/br:opacity-100 hover:scale-110 active:scale-95 z-30 bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0] pointer-events-auto"
+        className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 opacity-0 group-hover/tr:opacity-100 hover:scale-110 active:scale-95 z-30 bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0] pointer-events-auto"
         title="Copy URL"
       >
         {copied ? (
@@ -79,6 +69,16 @@ export default function LinkCard({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
         )}
+      </button>
+
+      <button
+        onClick={handleDelete}
+        className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 opacity-0 group-hover/br:opacity-100 hover:scale-110 active:scale-95 z-30 bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0] pointer-events-auto"
+        aria-label="Delete"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
 
       <div className="relative z-10 pointer-events-none">

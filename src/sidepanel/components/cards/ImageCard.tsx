@@ -62,23 +62,10 @@ export default function ImageCard({
         <div className="pointer-events-auto group/tl" />
 
         <div className="pointer-events-auto group/tr relative">
-          <button
-            onClick={onDelete}
-            className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 z-30 w-8 h-8 flex items-center justify-center bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0] rounded-full shadow-sm opacity-0 group-hover/tr:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="pointer-events-auto group/bl" />
-
-        <div className="pointer-events-auto group/br relative">
           {sourceUrl && (
             <button
               onClick={handleCopy}
-              className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 z-30 w-8 h-8 flex items-center justify-center bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0] rounded-full shadow-sm opacity-0 group-hover/br:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
+              className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 z-30 w-8 h-8 flex items-center justify-center bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0] rounded-full shadow-sm opacity-0 group-hover/tr:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
               title="Copy URL"
             >
               {copied ? (
@@ -92,6 +79,20 @@ export default function ImageCard({
               )}
             </button>
           )}
+        </div>
+
+        <div className="pointer-events-auto group/bl" />
+
+        <div className="pointer-events-auto group/br relative">
+          <button
+            onClick={onDelete}
+            className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 z-30 w-8 h-8 flex items-center justify-center bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0] rounded-full shadow-sm opacity-0 group-hover/br:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
+            title="Delete Card"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
 
