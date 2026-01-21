@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Project } from '../../services/db'
 import VaultAuth from '../common/VaultAuth'
@@ -12,6 +12,17 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
   const [isCreating, setIsCreating] = useState(false)
   const [createType, setCreateType] = useState<'canvas' | 'markdown'>('canvas')
   const [vaultAuthorized, setVaultAuthorized] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editName, setEditName] = useState('')
+  const editInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus edit input
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus()
+      editInputRef.current.select()
+    }
+  }, [editingId])
 
   // Check vault status
   const checkVault = async () => {
@@ -20,9 +31,9 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
   }
 
   // Check on mount and when creating
-  useState(() => {
+  useEffect(() => {
     checkVault()
-  })
+  }, [])
 
   const projects = useLiveQuery(async () => {
     // 获取所有项目
@@ -64,18 +75,13 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
         
         // Create file in Vault
         const rootHandle = vault.fileHandle as FileSystemDirectoryHandle
-        // Check permission
-        // Note: We assume permission is granted or will be prompted. 
-        // In a real app we might need verifyPermission here.
         
         let finalName = newProjectName.trim()
         let filename = `${finalName}.md`
         
         // Check for naming collision
         try {
-          // Try to get file without creating to check existence
           await rootHandle.getFileHandle(filename)
-          // If successful, file exists. Find a unique name.
           let i = 1
           while (true) {
             finalName = `${newProjectName.trim()} (${i})`
@@ -84,33 +90,25 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
               await rootHandle.getFileHandle(filename)
               i++
             } catch {
-              // Not found, safe to use
               break
             }
           }
         } catch {
-          // File doesn't exist, safe to use original name
         }
 
-        // Create file handle
         const file = await rootHandle.getFileHandle(filename, { create: true })
         fileHandle = file
         
-        // Update project name to match filename (without extension) if it changed
-        if (finalName !== newProjectName.trim()) {
-          // We'll use the new name for the project too
-        }
-
         const id = await db.projects.add({
           name: finalName,
           updatedAt: Date.now(),
           projectType: createType,
-          fileHandle: fileHandle as any // Cast to avoid type issues if DB type is strict
+          fileHandle: fileHandle as any 
         })
 
         setNewProjectName('')
         setIsCreating(false)
-        setCreateType('canvas') // Reset
+        setCreateType('canvas') 
 
         onSelectProject({
           id: id as number,
@@ -119,19 +117,19 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
           projectType: createType,
           fileHandle: fileHandle as any
         })
-        return // Exit function
+        return 
       }
 
       const id = await db.projects.add({
         name: newProjectName.trim(),
         updatedAt: Date.now(),
         projectType: createType,
-        fileHandle: fileHandle as any // Cast to avoid type issues if DB type is strict
+        fileHandle: fileHandle as any 
       })
 
       setNewProjectName('')
       setIsCreating(false)
-      setCreateType('canvas') // Reset
+      setCreateType('canvas') 
 
       onSelectProject({
         id: id as number,
@@ -146,6 +144,24 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
     }
   }, [newProjectName, createType, onSelectProject])
 
+  const handleRenameProject = async (projectId: number) => {
+    if (!editName.trim()) {
+      setEditingId(null)
+      return
+    }
+
+    try {
+      await db.projects.update(projectId, {
+        name: editName.trim(),
+        updatedAt: Date.now()
+      })
+      setEditingId(null)
+    } catch (err) {
+      console.error('[Cascade] Failed to rename project:', err)
+      alert('重命名失败')
+    }
+  }
+
   const handleDeleteProject = useCallback(async (e: React.MouseEvent, projectId: number) => {
     e.stopPropagation()
     if (confirm('确定要删除这个画板吗？所有卡片也会被删除。')) {
@@ -153,6 +169,13 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
       await db.projects.delete(projectId)
     }
   }, [])
+
+  const startEditing = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation()
+    if (project.isInbox) return
+    setEditingId(project.id!)
+    setEditName(project.name)
+  }
 
   if (projects === undefined) {
     return (
@@ -226,7 +249,7 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
       ) : (
         <button
           onClick={() => setIsCreating(true)}
-          className="w-full mb-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-blue-500 hover:text-blue-600 transition-colors"
+          className="w-full mb-4 py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-blue-500 hover:text-blue-600 transition-colors font-medium text-sm"
         >
           + 新建画板
         </button>
@@ -245,54 +268,86 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
             }`}
           >
             {!project.isInbox && (
-              <button
-                onClick={(e) => handleDeleteProject(e, project.id!)}
-                className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-8 h-8 flex items-center justify-center bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0] opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95 z-30 rounded-full shadow-sm"
-                title="删除画板"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-30">
+                <button
+                  onClick={(e) => startEditing(e, project)}
+                  className="w-7 h-7 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-sm hover:scale-110 active:scale-95"
+                  title="重命名"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => handleDeleteProject(e, project.id!)}
+                  className="w-7 h-7 flex items-center justify-center bg-[#e05f65] hover:bg-[#af3029] text-white rounded-full shadow-sm hover:scale-110 active:scale-95"
+                  title="删除画板"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             )}
 
             <div className="flex justify-between items-center">
               <div className="flex-1 min-w-0">
-                <h3 className={`font-semibold text-base mb-1 truncate ${
-                  project.isInbox ? 'text-green-800' : 'text-slate-800'
+                {editingId === project.id ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={() => handleRenameProject(project.id!)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameProject(project.id!)
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                    className="w-full px-2 py-1 text-base font-semibold border-2 border-blue-400 rounded-md focus:outline-none bg-white text-slate-800"
+                  />
+                ) : (
+                  <h3 className={`font-semibold text-base mb-0.5 truncate ${
+                    project.isInbox ? 'text-green-800' : 'text-slate-800'
+                  }`}>
+                    {project.name}
+                    {project.isInbox && (
+                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 border border-green-200 uppercase tracking-wider">
+                        Inbox
+                      </span>
+                    )}
+                  </h3>
+                )}
+                <p className={`text-[10px] font-medium ${
+                  project.isInbox ? 'text-green-600/60' : 'text-slate-400'
                 }`}>
-                  {project.name}
-                  {project.isInbox && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      默认
-                    </span>
-                  )}
-                </h3>
-                <p className={`text-[10px] ${
-                  project.isInbox ? 'text-green-600/70' : 'text-slate-400'
-                }`}>
-                  {new Date(project.updatedAt).toLocaleString()}
+                  {new Date(project.updatedAt).toLocaleDateString()} · {new Date(project.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
 
               <div className="flex items-center gap-3 flex-none ml-4">
                 {project.isInbox && (
-                  <div className="text-green-500/20 pointer-events-none">
+                  <div className="text-green-500/10 pointer-events-none">
                     <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                   </div>
                 )}
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${
-                  project.isInbox
-                    ? 'bg-green-200/50 text-green-800 border-green-200'
-                    : 'bg-slate-100 text-slate-600 border-slate-200'
-                }`}>
-                  {nodeCounts && nodeCounts[project.id!] !== undefined
-                    ? `${nodeCounts[project.id!]} 项`
-                    : '0 项'
-                  }
-                </span>
+                <div className={`flex flex-col items-end gap-0.5`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border shadow-sm ${
+                    project.isInbox
+                      ? 'bg-green-200/40 text-green-700 border-green-200/50'
+                      : 'bg-slate-50 text-slate-500 border-slate-200'
+                  }`}>
+                    {nodeCounts && nodeCounts[project.id!] !== undefined
+                      ? `${nodeCounts[project.id!]} 项`
+                      : '0 项'
+                    }
+                  </span>
+                  {project.projectType === 'markdown' && (
+                    <span className="text-[9px] font-bold text-purple-500/70 uppercase tracking-tighter">Markdown</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -300,9 +355,10 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
       </div>
 
       {projects.length === 0 && !isCreating && (
-        <div className="text-center text-slate-500 py-8">
-          <p className="mb-2">还没有画板</p>
-          <p className="text-sm">点击上方按钮创建第一个画板</p>
+        <div className="text-center text-slate-500 py-12 bg-white/50 rounded-2xl border-2 border-dashed border-slate-200 mt-4">
+          <div className="text-4xl mb-3 opacity-20">📁</div>
+          <p className="font-medium">还没有画板</p>
+          <p className="text-xs opacity-60">点击上方按钮创建第一个画板</p>
         </div>
       )}
     </div>
