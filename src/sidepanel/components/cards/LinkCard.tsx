@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, MouseEvent } from 'react'
 
 interface LinkCardProps {
   id: number
@@ -16,6 +16,25 @@ export default function LinkCard({
   onDelete,
 }: LinkCardProps) {
   const [iconError, setIconError] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch (err) {
+      console.error('[WebCanvas] Failed to copy:', err)
+    }
+  }
+
+  const handleDelete = (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onDelete()
+  }
 
   const getDomain = (urlStr: string) => {
     try {
@@ -28,26 +47,42 @@ export default function LinkCard({
   const displayTitle = title || getDomain(url)
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 group relative">
-      {/* Delete Button */}
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 group relative overflow-visible">
+      <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 z-20 pointer-events-none">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="pointer-events-auto group/tl" aria-label="Open Link" />
+        <a href={url} target="_blank" rel="noopener noreferrer" className="pointer-events-auto group/tr" aria-label="Open Link" />
+        <a href={url} target="_blank" rel="noopener noreferrer" className="pointer-events-auto group/bl" aria-label="Open Link" />
+        <a href={url} target="_blank" rel="noopener noreferrer" className="pointer-events-auto group/br" aria-label="Open Link" />
+      </div>
+
       <button
-        onClick={onDelete}
-        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-600 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full hover:shadow-lg active:scale-95"
+        onClick={handleDelete}
+        className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 opacity-0 group-hover/tr:opacity-100 hover:scale-110 active:scale-95 z-30 bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0] pointer-events-auto"
+        aria-label="Delete"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
-      {/* Link Content */}
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block hover:no-underline"
+      <button
+        onClick={handleCopy}
+        className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all duration-200 opacity-0 group-hover/br:opacity-100 hover:scale-110 active:scale-95 z-30 bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0] pointer-events-auto"
+        title="Copy URL"
       >
+        {copied ? (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        )}
+      </button>
+
+      <div className="relative z-10 pointer-events-none">
         <div className="flex items-start gap-3">
-          {/* Favicon */}
           <div className="shrink-0 w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
             {sourceIcon && !iconError ? (
               <img
@@ -63,7 +98,6 @@ export default function LinkCard({
             )}
           </div>
 
-          {/* Text Content */}
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-medium text-slate-800 truncate">
               {displayTitle}
@@ -73,7 +107,7 @@ export default function LinkCard({
             </p>
           </div>
         </div>
-      </a>
+      </div>
     </div>
   )
 }

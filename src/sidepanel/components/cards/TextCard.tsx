@@ -23,6 +23,7 @@ export default function TextCard({
   const [iconError, setIconError] = useState(false)
   const [isShowingOriginal, setIsShowingOriginal] = useState(false)
   const [hasEdited, setHasEdited] = useState(false)
+  const [showCopySuccess, setShowCopySuccess] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const isSavingRef = useRef(false)
   const lastSaveTimeRef = useRef(0)
@@ -159,6 +160,16 @@ export default function TextCard({
     }
   }
 
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setShowCopySuccess(true)
+      setTimeout(() => setShowCopySuccess(false), 1500)
+    } catch (err) {
+      console.error('[WebCanvas] Copy failed:', err)
+    }
+  }, [text])
+
   const getDomain = (url: string) => {
     try {
       return new URL(url).hostname.replace('www.', '')
@@ -173,54 +184,97 @@ export default function TextCard({
         isEditing ? 'border-blue-400 animate-pulse-blue' : 'border-slate-200 hover:border-blue-200'
       }`}
     >
-      {/* Version Toggle Icon & Sliding Label - Top Left Corner Vertex */}
-      {hasEdited && !isEditing && (
-        <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 z-20 group/version">
-          <button
-            onClick={() => setIsShowingOriginal(!isShowingOriginal)}
-            className={`
-              shrink-0 w-5 h-5 rounded-full 
-              flex items-center justify-center 
-              transition-all duration-500 ease-in-out
-              shadow-md ring-2 ring-white
-              ${isShowingOriginal 
-                ? 'bg-blue-500 rotate-180 scale-110' 
-                : 'bg-slate-300 hover:bg-slate-400 hover:scale-110'
-              }
-              active:scale-90
-            `}
+      {/* Quadrant Grid & Buttons */}
+      {!isEditing && (
+        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 z-20 pointer-events-none">
+          {/* Top Left - Restore */}
+          <div 
+            className="group/tl relative pointer-events-auto"
+            onDoubleClick={handleEnterEdit}
           >
-            <div className={`
-              rounded-full transition-all duration-500
-              ${isShowingOriginal 
-                ? 'w-2 h-2 border-2 border-white bg-transparent' 
-                : 'w-1.5 h-1.5 bg-slate-600'
-              }
-            `} />
-          </button>
-          
-          {/* Sliding Label - Only shows ORIGINAL when viewing original version */}
-          <div className={`
-            absolute left-full top-1/2 -translate-y-1/2 ml-1.5 overflow-hidden transition-all duration-500 ease-out flex items-center
-            ${isShowingOriginal ? 'max-w-24 opacity-100' : 'max-w-0 opacity-0'}
-          `}>
-            <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded shadow-sm border animate-in slide-in-from-left-2 duration-500 bg-blue-50 text-blue-500 border-blue-100">
-              ORIGINAL
-            </span>
+            {originalText && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsShowingOriginal(!isShowingOriginal)
+                }}
+                className={`
+                  absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4
+                  w-8 h-8 flex items-center justify-center rounded-full shadow-md
+                  transition-all duration-200 z-30
+                  opacity-0 group-hover/tl:opacity-100 hover:scale-110 active:scale-95
+                  bg-[#4385be] hover:bg-[#205ea6] text-[#fffcf0]
+                `}
+                title={isShowingOriginal ? "显示编辑版本" : "显示原始版本"}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Top Right - Delete */}
+          <div 
+            className="group/tr relative pointer-events-auto"
+            onDoubleClick={handleEnterEdit}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete()
+              }}
+              className={`
+                absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 
+                w-8 h-8 flex items-center justify-center rounded-full shadow-md 
+                transition-all duration-200 z-30 
+                opacity-0 group-hover/tr:opacity-100 hover:scale-110 active:scale-95 
+                bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0]
+              `}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Bottom Left - Empty */}
+          <div 
+            className="group/bl relative pointer-events-auto"
+            onDoubleClick={handleEnterEdit}
+          />
+
+          {/* Bottom Right - Copy */}
+          <div 
+            className="group/br relative pointer-events-auto"
+            onDoubleClick={handleEnterEdit}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCopy()
+              }}
+              className={`
+                absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4
+                w-8 h-8 flex items-center justify-center rounded-full shadow-md
+                transition-all duration-200 z-30
+                opacity-0 group-hover/br:opacity-100 hover:scale-110 active:scale-95
+                bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0]
+              `}
+              title="复制文本"
+            >
+              {showCopySuccess ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
-      )}
-      
-      {/* Delete Button - Top Right Corner Vertex */}
-      {!isEditing && (
-        <button
-          onClick={onDelete}
-          className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-600 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full bg-white shadow-md hover:shadow-lg ring-2 ring-white hover:scale-110 active:scale-95 z-20"
-        >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       )}
 
       {/* Content */}
@@ -265,7 +319,7 @@ export default function TextCard({
       </div>
 
       {/* Actions Row */}
-      <div className="flex items-center justify-between mt-2 min-h-[24px]">
+      <div className="flex items-center justify-between mt-2 min-h-[24px] relative z-30">
         <div>
           {isLongText && !isEditing && (
             <button
@@ -322,7 +376,7 @@ export default function TextCard({
 
       {/* Footer with source */}
       {sourceUrl && !isEditing && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5 text-xs text-slate-400">
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5 text-xs text-slate-400 relative z-30">
           {sourceIcon && !iconError && (
             <img
               src={sourceIcon}
