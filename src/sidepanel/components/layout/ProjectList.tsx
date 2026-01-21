@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type Project } from '../../services/db'
+import VaultAuth from '../common/VaultAuth'
 
 interface ProjectListProps {
   onSelectProject: (project: Project) => void
@@ -74,6 +75,9 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
 
   return (
     <div className="p-4">
+      {/* Vault Authorization */}
+      <VaultAuth />
+
       {/* Create Project Section */}
       {isCreating ? (
         <div className="mb-4 p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
