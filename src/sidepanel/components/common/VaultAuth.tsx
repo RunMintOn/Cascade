@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { db } from '../../services/db'
+import { db, VAULT_ROOT_NAME } from '../../services/db'
 import { requestDirectoryHandle } from '../../services/fs'
-
-const VAULT_ROOT_NAME = '___VAULT_ROOT___'
 
 export default function VaultAuth() {
   const [isAuthorized, setIsAuthorized] = useState(false)

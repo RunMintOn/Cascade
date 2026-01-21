@@ -8,7 +8,7 @@ export interface Project {
   updatedAt: number
   isInbox?: boolean // 标记是否为收集箱
   projectType?: 'canvas' | 'markdown'
-  fileHandle?: FileSystemDirectoryHandle
+  fileHandle?: FileSystemHandle
 }
 
 export interface CanvasNode {
@@ -62,6 +62,8 @@ class WebCanvasDB extends Dexie {
 }
 
 export const db = new WebCanvasDB()
+
+export const VAULT_ROOT_NAME = '___VAULT_ROOT___'
 
 // 暴露到全局用于调试（仅开发环境）
 if (typeof window !== 'undefined') {

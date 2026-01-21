@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Project } from './services/db'
 import ProjectList from './components/layout/ProjectList'
 import CardStream from './components/layout/CardStream'
+import LocalMDView from './components/local/LocalMDView'
 import StickyHeader from './components/layout/StickyHeader'
 import { db, ensureInboxExists, restoreNode } from './services/db'
 import { exportToCanvas } from './services/exporter'
@@ -208,10 +209,17 @@ function App() {
         onSuccess={handleProjectSuccess}
       >
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <CardStream
-            projectId={currentProject.id!}
-            onDelete={handleDeleteNode}
-          />
+          {currentProject.projectType === 'markdown' && currentProject.fileHandle && currentProject.fileHandle.kind === 'file' ? (
+            <LocalMDView 
+              fileHandle={currentProject.fileHandle as FileSystemFileHandle} 
+              project={currentProject} 
+            />
+          ) : (
+            <CardStream
+              projectId={currentProject.id!}
+              onDelete={handleDeleteNode}
+            />
+          )}
         </main>
       </DropZone>
     </div>

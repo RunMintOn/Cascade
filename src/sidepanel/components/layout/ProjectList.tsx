@@ -10,6 +10,19 @@ interface ProjectListProps {
 export default function ProjectList({ onSelectProject }: ProjectListProps) {
   const [newProjectName, setNewProjectName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [createType, setCreateType] = useState<'canvas' | 'markdown'>('canvas')
+  const [vaultAuthorized, setVaultAuthorized] = useState(false)
+
+  // Check vault status
+  const checkVault = async () => {
+    const vault = await db.projects.where('name').equals('___VAULT_ROOT___').first()
+    setVaultAuthorized(!!vault && !!vault.fileHandle)
+  }
+
+  // Check on mount and when creating
+  useState(() => {
+    checkVault()
+  })
 
   const projects = useLiveQuery(async () => {
     // 获取所有项目
@@ -39,23 +52,51 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
     if (!newProjectName.trim()) return
 
     try {
+      let fileHandle: FileSystemHandle | undefined
+
+      if (createType === 'markdown') {
+        // Get Vault Root
+        const vault = await db.projects.where('name').equals('___VAULT_ROOT___').first()
+        if (!vault || !vault.fileHandle) {
+          alert('请先授权本地文件夹')
+          return
+        }
+        
+        // Create file in Vault
+        const rootHandle = vault.fileHandle as FileSystemDirectoryHandle
+        // Check permission
+        // Note: We assume permission is granted or will be prompted. 
+        // In a real app we might need verifyPermission here.
+        
+        const filename = `${newProjectName.trim()}.md`
+        // Create file handle
+        const file = await rootHandle.getFileHandle(filename, { create: true })
+        fileHandle = file
+      }
+
       const id = await db.projects.add({
         name: newProjectName.trim(),
         updatedAt: Date.now(),
+        projectType: createType,
+        fileHandle: fileHandle as any // Cast to avoid type issues if DB type is strict
       })
 
       setNewProjectName('')
       setIsCreating(false)
+      setCreateType('canvas') // Reset
 
       onSelectProject({
         id: id as number,
         name: newProjectName.trim(),
         updatedAt: Date.now(),
+        projectType: createType,
+        fileHandle: fileHandle as any
       })
     } catch (e) {
       console.error('[WebCanvas] Failed to create project:', e)
+      alert('创建失败: ' + (e as Error).message)
     }
-  }, [newProjectName, onSelectProject])
+  }, [newProjectName, createType, onSelectProject])
 
   const handleDeleteProject = useCallback(async (e: React.MouseEvent, projectId: number) => {
     e.stopPropagation()
@@ -86,13 +127,39 @@ export default function ProjectList({ onSelectProject }: ProjectListProps) {
             value={newProjectName}
             onChange={(e) => setNewProjectName(e.target.value)}
             placeholder="输入画板名称..."
-            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleCreateProject()
               if (e.key === 'Escape') setIsCreating(false)
             }}
           />
+          
+          {vaultAuthorized && (
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setCreateType('canvas')}
+                className={`flex-1 py-1.5 text-xs rounded-md border transition-colors ${
+                  createType === 'canvas'
+                    ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                🎨 画布模式
+              </button>
+              <button
+                onClick={() => setCreateType('markdown')}
+                className={`flex-1 py-1.5 text-xs rounded-md border transition-colors ${
+                  createType === 'markdown'
+                    ? 'bg-purple-50 border-purple-200 text-purple-700 font-medium'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                📝 Markdown
+              </button>
+            </div>
+          )}
+
           <div className="flex gap-2 mt-2">
             <button
               onClick={handleCreateProject}
