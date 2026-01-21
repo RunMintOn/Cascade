@@ -83,7 +83,7 @@ Task 1 (DB Schema) → Task 2 (FS Service) → Task 3 (Vault Auth UI)
 
 ## TODOs
 
-- [ ] 1. Upgrade Database Schema (Version 3)
+- [x] 1. Upgrade Database Schema (Version 3)
   **What to do**:
   - Update `Project` interface in `db.ts` to include `projectType` and `fileHandle`.
   - Implement Dexie version 3 migration to default existing projects to `canvas` type.
@@ -92,7 +92,7 @@ Task 1 (DB Schema) → Task 2 (FS Service) → Task 3 (Vault Auth UI)
   - Existing projects have `projectType: 'canvas'`.
   **Parallelizable**: NO (Base for all tasks)
 
-- [ ] 2. Implement File System Service (`services/fs.ts`)
+- [x] 2. Implement File System Service (`services/fs.ts`)
   **What to do**:
   - Create functions for: `requestDirectoryHandle()`, `verifyPermission()`, `createMDFile()`, `readFile()`, `writeFile()`.
   - Handle image writing to `assets/` subfolder.
@@ -101,7 +101,7 @@ Task 1 (DB Schema) → Task 2 (FS Service) → Task 3 (Vault Auth UI)
   - Image writing handles Blob to File conversion.
   **Parallelizable**: YES
 
-- [ ] 3. Create Vault Authorization Component (`VaultAuth.tsx`)
+- [x] 3. Create Vault Authorization Component (`VaultAuth.tsx`)
   **What to do**:
   - Implement UI to trigger folder selection.
   - Store handle in a global 'Settings' project or a dedicated singleton.
@@ -111,7 +111,7 @@ Task 1 (DB Schema) → Task 2 (FS Service) → Task 3 (Vault Auth UI)
   - Displays currently authorized path/status.
   **Parallelizable**: YES
 
-- [ ] 4. Integrate BlockNote Editor (`LocalMDView.tsx`)
+- [x] 4. Integrate BlockNote Editor (`LocalMDView.tsx`)
   **What to do**:
   - Install `@blocknote/react`, `@blocknote/core`.
   - Create `LocalMDView` that loads file content into BlockNote.
@@ -121,7 +121,7 @@ Task 1 (DB Schema) → Task 2 (FS Service) → Task 3 (Vault Auth UI)
   - Edits are saved to disk after 500ms of inactivity.
   **Parallelizable**: NO (Depends on 2)
 
-- [ ] 5. Extend DropZone for Markdown Projects
+- [x] 5. Extend DropZone for Markdown Projects
   **What to do**:
   - Modify `DropZone.tsx` to detect if the current project is `markdown`.
   - Instead of `addTextNode`, call `editor.insertBlocks()` or similar on the active BlockNote instance.
