@@ -186,96 +186,96 @@ export default function TextCard({
     >
       {/* Quadrant Grid & Buttons */}
       {!isEditing && (
-        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 z-20 pointer-events-none">
-          {/* Top Left - Restore */}
-          <div 
-            className="group/tl relative pointer-events-auto"
-            onDoubleClick={handleEnterEdit}
-          >
-            {originalText && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsShowingOriginal(!isShowingOriginal)
-                }}
-                className={`
-                  absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4
-                  w-8 h-8 flex items-center justify-center rounded-full shadow-md
-                  transition-all duration-200 z-30
-                  opacity-0 group-hover/tl:opacity-100 hover:scale-110 active:scale-95
-                  bg-[#4385be] hover:bg-[#205ea6] text-[#fffcf0]
-                `}
-                title={isShowingOriginal ? "显示编辑版本" : "显示原始版本"}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Top Right - Copy (Swapped) */}
-          <div 
-            className="group/tr relative pointer-events-auto"
-            onDoubleClick={handleEnterEdit}
-          >
+      <div className="absolute inset-0 z-40 pointer-events-none">
+        {/* Top Left - Restore */}
+        <div
+          className="absolute top-0 left-0 w-[42%] h-[42%] pointer-events-auto group/tl"
+          onDoubleClick={handleEnterEdit}
+        >
+          {hasEdited && originalText && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                handleCopy()
+                setIsShowingOriginal(!isShowingOriginal)
               }}
               className={`
-                absolute top-0 right-0 translate-x-1/4 -translate-y-1/4
+                absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4
                 w-8 h-8 flex items-center justify-center rounded-full shadow-md
-                transition-all duration-200 z-30
-                opacity-0 group-hover/tr:opacity-100 hover:scale-110 active:scale-95
-                bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0]
+                transition-all duration-200 z-50
+                opacity-0 group-hover/tl:opacity-100 hover:scale-110 active:scale-95
+                bg-[#4385be] hover:bg-[#205ea6] text-[#fffcf0]
               `}
-              title="复制文本"
-            >
-              {showCopySuccess ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Bottom Left - Empty */}
-          <div 
-            className="group/bl relative pointer-events-auto"
-            onDoubleClick={handleEnterEdit}
-          />
-
-          {/* Bottom Right - Delete (Swapped) */}
-          <div 
-            className="group/br relative pointer-events-auto"
-            onDoubleClick={handleEnterEdit}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete()
-              }}
-              className={`
-                absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 
-                w-8 h-8 flex items-center justify-center rounded-full shadow-md 
-                transition-all duration-200 z-30 
-                opacity-0 group-hover/br:opacity-100 hover:scale-110 active:scale-95 
-                bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0]
-              `}
-              title="删除卡片"
+              title={isShowingOriginal ? "显示编辑版本" : "显示原始版本"}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
-          </div>
+          )}
         </div>
+
+        {/* Top Right - Copy */}
+        <div
+          className="absolute top-0 right-0 w-[42%] h-[42%] pointer-events-auto group/tr"
+          onDoubleClick={handleEnterEdit}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleCopy()
+            }}
+            className={`
+              absolute top-0 right-0 translate-x-1/4 -translate-y-1/4
+              w-8 h-8 flex items-center justify-center rounded-full shadow-md
+              transition-all duration-200 z-50
+              opacity-0 group-hover/tr:opacity-100 hover:scale-110 active:scale-95
+              bg-[#879a39] hover:bg-[#606e2c] text-[#fffcf0]
+            `}
+            title="复制文本"
+          >
+            {showCopySuccess ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Bottom Left - Empty */}
+        <div
+          className="absolute bottom-0 left-0 w-[42%] h-[42%] pointer-events-auto group/bl"
+          onDoubleClick={handleEnterEdit}
+        />
+
+        {/* Bottom Right - Delete */}
+        <div
+          className="absolute bottom-0 right-0 w-[42%] h-[42%] pointer-events-auto group/br"
+          onDoubleClick={handleEnterEdit}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className={`
+              absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4
+              w-7 h-7 flex items-center justify-center rounded-full shadow-md
+              transition-all duration-200 z-50
+              opacity-0 group-hover/br:opacity-100 hover:scale-110 active:scale-95
+              bg-[#e05f65] hover:bg-[#af3029] text-[#fffcf0]
+            `}
+            title="删除卡片"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
       )}
 
       {/* Content */}
