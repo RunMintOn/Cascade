@@ -7,11 +7,13 @@ export default defineManifest({
   version: pkg.version,
   description: 'Collect web content and export to Obsidian Canvas',
   icons: {
+    16: 'public/icon-16.png',
     48: 'public/icon-48.png',
     128: 'public/icon-128.png',
   },
   action: {
     default_icon: {
+      16: 'public/icon-16.png',
       48: 'public/icon-48.png',
     },
     default_title: 'Open Cascade',
