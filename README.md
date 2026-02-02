@@ -10,14 +10,27 @@ Cascade 是一个轻量级的浏览器侧边栏扩展，它为你提供了一个
 - **Obsidian 联动**：导出时自动将列表转化为 Obsidian 中的二维网格布局，实现“一维采集，二维整理”。
 - **离线存储**：使用 IndexedDB 存储，数据不出本地，安全可靠。
 
+## 📥 下载与安装 (推荐新手使用)
+
+如果您只想直接使用插件，无需配置开发环境，请按照以下步骤操作：
+
+1.  **下载插件包**：前往 [Releases 页面](https://github.com/RunMintOn/Cascade/releases/latest) 下载最新的 `Cascade-vX.X.zip` 压缩包。
+2.  **解压文件**：将下载的压缩包解压到您电脑上的一个固定文件夹（解压后会得到一个 `dist` 文件夹）。
+3.  **打开扩展程序页面**：在 Chrome 浏览器地址栏输入 `chrome://extensions/` 并回车。
+4.  **开启开发者模式**：打开页面右上角的 **“开发者模式”** 开关。
+5.  **加载插件**：点击左上角的 **“加载已解压的扩展程序” (Load unpacked)**，选择刚才解压出来的 `dist` 文件夹。
+6.  **固定插件**：安装完成后，点击浏览器右上角的“拼图”图标，找到 **Cascade** 并点击图钉图标将其固定。
+
+---
+
 ## 🛠️ 如何在本地运行 (开发模式)
 
 如果你想尝试或参与开发这个项目，请按照以下步骤操作：
 
 ### 1. 克隆仓库
 ```bash
-git clone https://github.com/RunMintOn/Stream2Grid.git
-cd Stream2Grid
+git clone https://github.com/RunMintOn/Cascade.git
+cd Cascade
 ```
 
 ### 2. 安装依赖
