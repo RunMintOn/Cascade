@@ -1,11 +1,54 @@
-.gitignore
-nul
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Dependency directories
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Build outputs
 dist
-node_modules
+dist-ssr
+*.local
 
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
+# IDEs and editors
+.vscode/*
+!.vscode/extensions.json
+.idea
+.shproj
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Project specific
+nul
 开发过程用到的文档
 z_待增加功能.md
-
-.png
+Cascade-v1.0.zip
+Cascade-release.zip
+*.canvas
+!src/assets/*.png
+!public/*.png
