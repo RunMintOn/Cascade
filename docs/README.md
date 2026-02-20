@@ -1,169 +1,104 @@
-# WebCanvas 开发文档
+# Cascade 开发文档
 
-**项目**: WebCanvas (Obsidian Browser Scout / Stream2Grid)  
-**版本**: 2.0  
-**最后更新**: 2026-01-18
-
----
-
-## 📁 文档结构
-
-```
-docs/
-├── 01-产品需求与架构/
-│   ├── PRD.md                    # 产品需求定义
-│   └── 技术架构.md                # 技术栈 + 架构设计
-│
-├── 02-开发指南/
-│   ├── 01-数据结构设计.md         # IndexedDB Schema + 类型定义
-│   ├── 02-核心功能实现.md         # 拖拽、粘贴、图片处理
-│   └── 03-导出模块.md             # List-to-Grid 算法 + JSON Canvas
-│
-├── 03-用户文档/
-│   ├── 使用指南.md                # 安装、功能说明、使用场景
-│   └── 故障排查.md                # 常见问题 + 解决方案
-│
-├── 04-测试与质量/
-│   └── 测试指南.md                # 功能测试步骤
-│
-├── 05-更新日志/
-│   └── CHANGELOG.md               # 版本更新记录
-│
-└── 06-参考资料/
-    └── JSON_Canvas 规范.md         # Obsidian Canvas 格式规范
-```
+**项目**: Cascade (原名 WebCanvas)  
+**版本**: 1.0.0  
+**最后更新**: 2026-02-20
 
 ---
 
-## 🚀 快速导航
+## 📁 文档索引
+
+| 文档 | 说明 |
+|------|------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | 系统架构与技术栈 |
+| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | 数据库结构与类型定义 |
+| [FEATURES.md](./FEATURES.md) | 功能清单与实现状态 |
+| [EXPORT_GUIDE.md](./EXPORT_GUIDE.md) | 导出到 Obsidian Canvas 规范 |
+| [USER_GUIDE.md](./USER_GUIDE.md) | 用户使用指南 |
+| [CHANGELOG.md](./CHANGELOG.md) | 更新日志 |
+| [TODO.md](./TODO.md) | 待实现功能与改进计划 |
+
+---
+
+## 🚀 快速开始
 
 ### 新成员入门
 
-1. **[PRD](01-产品需求与架构/PRD.md)** - 了解产品定位和功能
-2. **[技术架构](01-产品需求与架构/技术架构.md)** - 技术栈和架构设计
-3. **[使用指南](03-用户文档/使用指南.md)** - 从用户角度理解产品
-
-### 开发人员
-
-| 任务 | 参考文档 |
-|------|----------|
-| 理解数据结构 | [数据结构设计](02-开发指南/01-数据结构设计.md) |
-| 实现拖拽功能 | [核心功能实现](02-开发指南/02-核心功能实现.md#1-智能拖拽系统) |
-| 实现粘贴功能 | [核心功能实现](02-开发指南/02-核心功能实现.md#2-粘贴功能-ctrlv) |
-| 实现导出功能 | [导出模块](02-开发指南/03-导出模块.md) |
-| 图片处理 | [核心功能实现](02-开发指南/02-核心功能实现.md#3-图片处理) |
-
-### 测试人员
-
-1. **[测试指南](04-测试与质量/测试指南.md)** - 完整测试流程
-2. **[故障排查](03-用户文档/故障排查.md)** - 常见问题解决方案
+1. 先阅读 [ARCHITECTURE.md](./ARCHITECTURE.md) 了解技术栈
+2. 查看 [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) 理解数据结构
+3. 阅读 [FEATURES.md](./FEATURES.md) 了解已实现功能
 
 ### 用户
 
-1. **[使用指南](03-用户文档/使用指南.md)** - 安装和使用说明
-2. **[故障排查](03-用户文档/故障排查.md)** - 遇到问题先看这里
+- 直接使用指南：[USER_GUIDE.md](./USER_GUIDE.md)
+- 遇到问题：查看 [TODO.md](./TODO.md) 确认是否是已知问题
 
 ---
 
-## 📋 文档索引
+## 📦 项目概述
 
-### 产品需求与架构
+**Cascade** 是一个浏览器扩展，用于从网页采集内容（文本、图片、链接）并导出为 Obsidian Canvas 格式。
 
-| 文档 | 说明 |
+### 核心工作流
+
+```
+网页采集 → 卡片列表 → 导出到 Obsidian Canvas
+   ↓           ↓              ↓
+拖拽/粘贴   编辑/排序    4 列网格布局
+```
+
+### 技术栈
+
+| 模块 | 技术 |
 |------|------|
-| [PRD.md](01-产品需求与架构/PRD.md) | 产品需求定义、用户故事、功能模块 |
-| [技术架构.md](01-产品需求与架构/技术架构.md) | 技术栈选型、数据流向、组件架构 |
+| 框架 | React 19 + TypeScript |
+| 构建 | Vite + CRXJS |
+| 数据库 | Dexie.js (IndexedDB) |
+| 拖拽 | @dnd-kit |
+| 样式 | Tailwind CSS 4 |
+| 打包 | JSZip |
 
-### 开发指南
+### 项目结构
 
-| 文档 | 说明 |
-|------|------|
-| [01-数据结构设计.md](02-开发指南/01-数据结构设计.md) | TypeScript 类型、IndexedDB Schema、数据转换 |
-| [02-核心功能实现.md](02-开发指南/02-核心功能实现.md) | 拖拽系统、粘贴功能、图片处理、收集箱 |
-| [03-导出模块.md](02-开发指南/03-导出模块.md) | List-to-Grid 算法、JSON Canvas 规范、ZIP 打包 |
+```
+src/
+├── background/           # Service Worker（图片下载）
+├── content/              # Content Script（拖拽监听）
+├── sidepanel/            # 侧边栏主界面
+│   ├── components/       # React 组件
+│   ├── services/         # 服务层（DB、导出、文件系统）
+│   ├── contexts/         # React Context（Undo）
+│   └── App.tsx           # 主应用
+└── types/                # TypeScript 类型定义
+```
 
-### 用户文档
+---
 
-| 文档 | 说明 |
-|------|------|
-| [使用指南.md](03-用户文档/使用指南.md) | 安装、采集、管理、导出、常见问题 |
-| [故障排查.md](03-用户文档/故障排查.md) | 问题诊断流程、常见问题解决方案 |
+## 📝 文档维护原则
 
-### 测试与质量
+### 单一事实来源
 
-| 文档 | 说明 |
-|------|------|
-| [测试指南.md](04-测试与质量/测试指南.md) | 功能测试、兼容性测试、性能测试 |
+- 文档必须与代码一致
+- 代码变更时必须同步更新文档
+- 不记录代码中不存在的内容
 
-### 更新日志
+### 文档分类
 
-| 文档 | 说明 |
-|------|------|
-| [CHANGELOG.md](05-更新日志/CHANGELOG.md) | 版本更新记录、功能变更、Bug 修复 |
-
-### 参考资料
-
-| 文档 | 说明 |
-|------|------|
-| [JSON_Canvas 规范.md](06-参考资料/JSON_Canvas 规范.md) | Obsidian Canvas 格式规范详解 |
+| 类型 | 更新频率 | 负责人 |
+|------|----------|--------|
+| 架构文档 | 低（架构变更时） | 核心开发 |
+| 数据库 Schema | 中（数据库变更时） | 数据库负责人 |
+| 功能清单 | 高（每次迭代） | 全体开发 |
+| 用户指南 | 中（功能变更时） | 产品负责人 |
+| 更新日志 | 高（每次提交） | 提交者 |
 
 ---
 
 ## 🔗 外部资源
 
-### 技术栈文档
-
 - [React 官方文档](https://react.dev/)
 - [Vite 官方文档](https://vitejs.dev/)
-- [CRXJS 文档](https://crxjs.dev/vite-plugin)
 - [Dexie.js 文档](https://dexie.org/)
 - [@dnd-kit 文档](https://dndkit.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [JSZip](https://stuk.github.io/jszip/)
-
-### Chrome Extension
-
 - [Chrome Extension 文档](https://developer.chrome.com/docs/extensions/)
-- [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/)
-- [Side Panel API](https://developer.chrome.com/docs/extensions/reference/sidePanel/)
-
-### Obsidian
-
-- [Obsidian Canvas 文档](https://help.obsidian.md/plugins/canvas)
-- [JSON Canvas 规范](https://jsoncanvas.org/spec/1.0/)
-
----
-
-## 📝 文档维护
-
-### 更新原则
-
-1. **代码未动，文档先行** - 修改功能前先更新相关文档
-2. **单一来源** - 每个主题只在一个地方详细说明
-3. **版本关联** - 重大变更同步更新 CHANGELOG
-
-### 文档审查
-
-每次 PR 需要检查：
-- [ ] 相关文档是否已更新
-- [ ] 代码示例是否准确
-- [ ] 截图是否需要更新
-
----
-
-## 🎯 项目核心理念
-
-**流式采集 + 网格导出**
-
-- 浏览器端：极简的垂直列表（Stream）
-- Obsidian 端：导出的瞬间升维为二维网格（Grid）
-
-**Local-First**
-
-- 无账户体系
-- 数据全本地
-- 隐私优先
-
----
-
-**文档整理完成时间**: 2026-01-18
+- [Obsidian Canvas 规范](https://jsoncanvas.org/spec/1.0/)

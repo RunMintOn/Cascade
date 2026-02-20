@@ -1,48 +1,46 @@
-# WebCanvas 使用指南
+# 用户使用指南 (USER_GUIDE)
 
-**版本**: 2.0  
-**最后更新**: 2026-01-18
+**版本**: 1.0.0  
+**最后更新**: 2026-02-20
 
 ---
 
 ## 快速开始
 
-### 第一步：安装扩展
+### 第一步：加载扩展
 
-#### 方法 1：开发者模式（推荐）
+#### 开发者模式安装
 
 1. 打开 Chrome 或 Edge 浏览器
 2. 访问 `chrome://extensions/`
 3. 开启右上角 **"开发者模式"**
 4. 点击 **"加载已解压的扩展程序"**
 5. 选择项目的 `dist` 目录
-6. 扩展图标出现在工具栏（蓝色方块）
+6. 扩展图标出现在工具栏
 
-#### 方法 2：打包安装
+#### 构建生产版本
 
 ```bash
-# 构建生产版本
 npm run build
-
-# 将 dist/ 目录打包为 zip
-# 拖拽 zip 文件到 chrome://extensions/ 页面
 ```
+
+然后加载 `dist/` 目录。
 
 ---
 
 ## 核心功能
 
-### 1. 创建画板
+### 1. 创建项目
 
 1. 点击扩展图标打开侧边栏
 2. 点击 **"+ 新建画板"**
-3. 输入名称（如"装修灵感"）
+3. 输入项目名称
 4. 按 Enter 创建
 
-### 2. 快速收集箱 (Inbox)
+### 2. 收集箱 (Inbox)
 
 - **收集箱** 是默认的临时收集区
-- 未进入项目时拖拽/粘贴内容，直接保存到这里
+- 未进入项目时，内容直接保存到这里
 - 绿色主题区分，带有"默认"标签
 - 无法删除（保护机制）
 
@@ -54,9 +52,9 @@ npm run build
 
 | 类型 | 采集方式 | 显示效果 |
 |------|----------|----------|
-| **文本** | 选中文字 → 拖拽 或 Ctrl+V | 文本卡片 |
-| **图片** | 拖拽图片 或 右键复制后粘贴 | 图片卡片（自动下载） |
-| **链接** | 拖拽链接 或 复制 URL 后粘贴 | 链接卡片 |
+| **文本** | 选中文字 → 拖拽 | 文本卡片 |
+| **图片** | 拖拽图片 | 图片卡片（自动下载） |
+| **链接** | 拖拽链接 | 链接卡片 |
 
 ### 方式 1：拖拽采集
 
@@ -74,13 +72,12 @@ npm run build
 1. 复制内容（文本/图片/URL）
 2. 打开侧边栏
 3. 按 `Ctrl+V`（Mac: `Cmd+V`）
-4. 内容自动添加
+4. 内容自动创建
 
 **支持的粘贴类型**：
 - 纯文本 → 文本卡片
 - 剪贴板图片 → 图片卡片
-- URL → 链接卡片
-- HTML 内容 → 自动提取图片/链接
+- URL → 链接卡片（自动识别）
 
 ---
 
@@ -95,17 +92,25 @@ npm run build
 ### 卡片类型
 
 #### 文本卡片
+
 - 最多显示 4 行（超出截断）
 - 超过 300 字符显示"展开全部"
 - 底部显示来源网站 Favicon + 域名
 
+**编辑功能**：
+- 双击卡片进入编辑
+- 支持原始/编辑版本切换（四象限交互）
+- 一键复制文本
+
 #### 图片卡片
+
 - 图片最大高度 180px
 - 自动裁剪保持整齐
 - 显示 Loading/Error 状态
 - 底部显示来源网站
 
 #### 链接卡片
+
 - 显示 Favicon + 标题 + 域名
 - 点击卡片跳转原链接
 
@@ -114,12 +119,33 @@ npm run build
 1. 悬停卡片，点击右上角 **×** 删除
 2. 卡片立即消失
 3. 底部弹出 Toast："已删除 (撤销)"
-4. 3 秒内点击 **撤销** 恢复
+4. 3 秒内点击 **撤销** 或按 `Ctrl+Z` 恢复
 
 ### 调整顺序
 
 1. 拖拽卡片到目标位置
 2. 松开鼠标完成排序
+
+---
+
+## 文本编辑（版本控制）
+
+### 四象限交互
+
+文本卡片支持四个隐藏按钮，双击卡片任意区域进入编辑：
+
+| 位置 | 功能 | 说明 |
+|------|------|------|
+| 左上角 | 版本切换 | 原始版本 ↔ 编辑版本 |
+| 右上角 | 复制 | 一键复制文本 |
+| 左下角 | （空） | 双击进入编辑 |
+| 右下角 | 删除 | 删除卡片 |
+
+### 版本控制
+
+- **第一次编辑**: 自动保存原始版本
+- **后续编辑**: 只更新编辑版本
+- **切换显示**: 点击左上角按钮切换
 
 ---
 
@@ -145,14 +171,31 @@ npm run build
 
 1. 打开 Obsidian（版本 1.0+）
 2. 解压下载的 ZIP 文件
-3. 将 `.canvas` 文件放入 Vault
-4. 点击 `.canvas` 文件打开
+3. 将 `.canvas` 文件和 `attachments/` 文件夹放入 Vault
+4. 在 Obsidian 中点击 `.canvas` 文件打开
 
 **显示效果**：
 - 所有卡片按 4 列网格自动排列
 - 文本节点支持 Markdown
-- 图片正常显示（相对路径）
+- 图片正常显示
 - 链接节点可点击跳转
+
+---
+
+## 本地 Markdown 支持
+
+### 创建 Markdown 项目
+
+1. 点击"+ 新建画板"
+2. 选择项目类型为 "Markdown"
+3. 选择本地 Markdown 文件
+4. 直接在浏览器中编辑
+
+### 编辑本地文件
+
+- 支持实时预览
+- 自动保存
+- 与 Obsidian 同步
 
 ---
 
@@ -221,7 +264,7 @@ npm run build
 3. 或在 `.canvas` 文件添加 frontmatter：
    ```yaml
    ---
-   created-by: Obsidian
+   created-by: Cascade
    source: internal
    ---
    ```
@@ -232,10 +275,10 @@ npm run build
 
 ### 数据存储
 
-- **位置**：浏览器 IndexedDB
-- **库名**：`WebCanvasDB`
-- **容量**：Chrome 约 5-10GB
-- **特点**：完全本地存储，关闭浏览器后数据仍在
+- **位置**: 浏览器 IndexedDB
+- **库名**: `CascadeDB`
+- **容量**: Chrome 约 5-10GB
+- **特点**: 完全本地存储，关闭浏览器后数据仍在
 
 ### 数据安全
 
@@ -252,41 +295,6 @@ npm run build
 | Firefox | - | ❌ |
 | Safari | - | ❌ |
 
-### Obsidian 兼容性
-
-| 功能 | 要求 | 状态 |
-|------|------|------|
-| Canvas 插件 | >= 1.0 | ✅ |
-| JSON Canvas 格式 | 符合 1.0 规范 | ✅ |
-
----
-
-## 调试与日志
-
-### 查看日志
-
-**Side Panel 日志**：
-1. 右键 Side Panel → "检查"
-2. Console 标签查看 `[WebCanvas]` 前缀日志
-
-**Background Service Worker 日志**：
-1. `chrome://extensions/`
-2. 点击扩展卡片的 "service worker" 链接
-
-**Content Script 日志**：
-1. 任意网页按 F12
-2. Console 查看 `[WebCanvas]` 日志
-
-### 常见日志
-
-```
-[WebCanvas] Paste event triggered
-[WebCanvas] Pasted text: 文本内容...
-[WebCanvas] Pasted image: image-xxx.png, size: 52432
-[WebCanvas] Pasted URL: https://example.com
-[WebCanvas] Export completed: 项目名
-```
-
 ---
 
 ## 键盘快捷键
@@ -296,6 +304,34 @@ npm run build
 | **Enter** | 创建画板（在输入框中） |
 | **Esc** | 取消创建画板 |
 | **Ctrl+V** | 粘贴内容 |
+| **Ctrl+Z** | 撤销删除 |
+
+---
+
+## 调试与日志
+
+### 查看日志
+
+**Side Panel 日志**：
+1. 右键 Side Panel → "检查"
+2. Console 标签查看 `[Cascade]` 前缀日志
+
+**Background Service Worker 日志**：
+1. `chrome://extensions/`
+2. 点击扩展卡片的 "service worker" 链接
+
+**Content Script 日志**：
+1. 任意网页按 F12
+2. Console 查看 `[Cascade]` 日志
+
+### 常见日志
+
+```
+[Cascade] Exporting project: 项目名
+[Cascade] Text node added successfully
+[Cascade] Image downloaded: image-xxx.png
+[Cascade] Export completed: 项目名
+```
 
 ---
 
@@ -304,7 +340,7 @@ npm run build
 ### 移除扩展
 
 1. 访问 `chrome://extensions/`
-2. 找到 "WebCanvas" 扩展
+2. 找到 "Cascade" 扩展
 3. 点击 **"移除"**
 
 ### 数据清理
@@ -314,4 +350,4 @@ npm run build
 
 ---
 
-**祝使用愉快！** 🎉
+**祝使用愉快！**
