@@ -1,308 +1,98 @@
-# 系统架构 (ARCHITECTURE)
+# 系统架构
 
-**最后更新**: 2026-02-20
+**最后更新**: 2026-03-08
 
----
+本文档说明 Cascade 的真实架构、主要模块和关键数据流。它只描述当前代码里已经存在的结构。
 
-## 1. 技术栈
+## 总览
 
-### 核心技术
+Cascade 是一个 Chrome MV3 扩展，分为三段：
 
-| 模块 | 技术 | 版本 | 用途 |
-|------|------|------|------|
-| **框架** | React | 19.x | UI 组件开发 |
-| **语言** | TypeScript | 5.9.x | 类型安全 |
-| **构建** | Vite | 7.x | 快速构建 |
-| **扩展构建** | CRXJS | 2.3.x | Chrome 扩展构建 |
+1. `Content Script`：在网页里识别拖拽内容
+2. `Background Service Worker`：负责图片下载和拖拽 payload 兜底缓存
+3. `Side Panel`：负责 UI、Dexie 数据存储、导出和本地 Markdown 编辑
 
-### 关键库
+持久化层统一使用 `IndexedDB`，数据库名为 `CascadeDB`。
 
-| 库 | 版本 | 用途 |
-|------|------|------|
-| `dexie` | 4.2.x | IndexedDB 封装 |
-| `dexie-react-hooks` | 4.2.x | React 响应式数据 |
-| `@dnd-kit/core` | 6.3.x | 拖拽排序 |
-| `@dnd-kit/sortable` | 10.x | 可排序列表 |
-| `jszip` | 3.10.x | ZIP 打包 |
-| `tailwindcss` | 4.x | 样式系统 |
+## 架构分层
 
-### 开发工具
+| 层 | 位置 | 主要职责 |
+|----|------|----------|
+| Content Script | `src/content/drag-listener.ts` | 监听 `dragstart`，识别文本 / 图片 / 链接，构造 payload |
+| Background | `src/background/index.ts` | 缓存最近一次拖拽 payload，下载远程图片，响应扩展消息 |
+| Side Panel UI | `src/sidepanel/App.tsx` | 项目切换、收集箱、导出入口、撤销逻辑 |
+| Side Panel Services | `src/sidepanel/services/` | 数据库、导出、文件系统访问 |
 
-| 工具 | 用途 |
-|------|------|
-| `@types/chrome` | Chrome API 类型定义 |
-| `playwright` | 端到端测试 |
-| `eslint` | 代码检查 |
+## 关键数据流
 
----
+### 1. 采集文本 / 图片 / 链接
 
-## 2. 系统架构
+1. 网页触发 `dragstart`
+2. `Content Script` 识别内容类型并生成 payload
+3. payload 同时写入 `dataTransfer`，并发给 `Background` 做兜底缓存
+4. `Side Panel` 中的 `DropZone` 在 `drop` 时优先尝试读取缓存，再回退到 `dataTransfer`
+5. 普通项目写入 Dexie；Markdown 项目改为派发自定义事件给本地编辑器
 
-### 2.1 整体架构
+### 2. 图片下载
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Chrome Extension                     │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐ │
-│  │  Content    │  │  Side Panel │  │   Background    │ │
-│  │  Script     │  │  (React)    │  │   Service Worker│ │
-│  │             │  │             │  │                 │ │
-│  │ - dragstart │  │ - UI 渲染    │  │ - 图片下载      │ │
-│  │ - payload   │  │ - 卡片管理   │  │ - 消息中转      │ │
-│  └──────┬──────┘  └──────┬──────┘  └────────┬────────┘ │
-│         │                │                   │          │
-│         └────────────────┼───────────────────┘          │
-│                          │                              │
-│                  ┌───────▼────────┐                     │
-│                  │   IndexedDB    │                     │
-│                  │   (CascadeDB)  │                     │
-│                  └────────────────┘                     │
-└─────────────────────────────────────────────────────────┘
-```
+1. `DropZone` 发现是远程图片 URL
+2. 发消息给 `Background` 执行 `fetch`
+3. `Background` 把图片转成 base64 后回传
+4. `Side Panel` 转成 `Blob` 并写入 `db.nodes`
+5. `ImageCard` 使用 `URL.createObjectURL` 渲染图片
 
-### 2.2 数据流
+### 3. 导出到 Obsidian Canvas
 
-#### 拖拽采集流程
+1. 项目页点击“导出”
+2. `exportToCanvas(projectId, projectName)` 读取全部节点
+3. 节点按 `order` 转为固定 4 列网格布局
+4. 生成 `.canvas` JSON 和 `attachments/` 目录
+5. 使用 `JSZip` 打包并触发下载
 
-```
-网页 (Content Script)
-    ↓ dragstart 事件
-构造 DragPayload
-    ↓ chrome.runtime.sendMessage
-Background 缓存 payload (5 秒过期)
-    ↓
-用户拖拽到 Side Panel
-    ↓ drop 事件
-读取 payload 或 dataTransfer
-    ↓
-创建 CanvasNode
-    ↓
-IndexedDB 存储
-    ↓
-Dexie React Hooks 响应式更新
-    ↓
-UI 重新渲染
-```
+### 4. Markdown 项目模式
 
-#### 图片下载流程
+1. 用户先授权本地文件夹
+2. 新建 Markdown 项目时会创建一个 `.md` 文件
+3. `LocalMDView` 使用 File System Access API 读写该文件
+4. 来自 `DropZone` 的内容通过 `webcanvas-insert-markdown` 事件插入编辑器
 
-```
-Side Panel: 检测到图片拖拽
-    ↓ chrome.runtime.sendMessage
-Background: handleImageDownload
-    ↓ fetch(url, { mode: 'cors' })
-获取 Blob
-    ↓ FileReader.readAsDataURL
-转换为 Base64
-    ↓ chrome.runtime.sendMessage
-Side Panel: 接收 base64
-    ↓
-IndexedDB 存储 (fileData: Blob)
-    ↓
-UI 渲染 (URL.createObjectURL)
-```
+## Side Panel 结构
 
-#### 导出流程
+`App` 是侧边栏主入口，整体分为两种状态：
 
-```
-用户点击"导出"
-    ↓
-exportToCanvas(projectId, projectName)
-    ↓
-从 IndexedDB 读取所有 nodes
-    ↓
-List-to-Grid 算法 (4 列网格)
-    ↓
-生成 Obsidian Canvas JSON
-    ↓
-JSZip 打包 (.canvas + attachments/)
-    ↓
-浏览器下载 ZIP
-```
+- **首页状态**：显示 `Inbox` 和项目列表
+- **项目状态**：显示 `CardStream` 或 `LocalMDView`
 
----
+主要组件关系如下：
 
-## 3. 核心模块
-
-### 3.1 Background Service Worker
-
-**文件**: `src/background/index.ts`
-
-**职责**:
-- 图片下载（CORS 处理）
-- Drag Payload 缓存（解决跨域问题）
-- Favicon 获取代理
-
-**关键函数**:
-```typescript
-// 图片下载
-handleImageDownload(imageUrl, projectId, sourceUrl)
-
-// 消息处理
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-  if (request.action === 'downloadImage') { ... }
-  if (request.action === 'getFavicon') { ... }
-  if (request.action === 'setDragPayload') { ... }
-  if (request.action === 'getDragPayload') { ... }
-})
-```
-
-### 3.2 Content Script
-
-**文件**: `src/content/drag-listeners.ts`
-
-**职责**:
-- 监听网页拖拽事件
-- 构造 DragPayload
-- 发送到 Background 缓存
-
-**Payload 结构**:
-```typescript
-interface DragPayload {
-  sourceUrl: string
-  sourceTitle: string
-  sourceIcon: string
-  type: 'text' | 'image' | 'link' | 'unknown'
-  content: string | null
-  linkTitle: string | null
-}
-```
-
-### 3.3 Side Panel
-
-**文件**: `src/sidepanel/`
-
-**组件树**:
-```
+```text
 App
-├── UndoProvider (Context)
-│   ├── App (with undo/redo)
-│   │   ├── StickyHeader
-│   │   ├── DropZone
-│   │   │   ├── ProjectList (Inbox 模式)
-│   │   │   └── CardStream (项目模式)
-│   │   │       ├── TextCard
-│   │   │       ├── ImageCard
-│   │   │       └── LinkCard
-│   │   └── LocalMDView (Markdown 模式)
-│   └── UndoToast
+├─ StickyHeader
+├─ DropZone
+│  ├─ ProjectList        // 首页
+│  ├─ CardStream         // Canvas 项目
+│  └─ LocalMDView        // Markdown 项目
+└─ UndoToast
 ```
 
-**核心服务**:
-| 服务 | 文件 | 职责 |
+## 核心服务
+
+| 服务 | 文件 | 作用 |
 |------|------|------|
-| `db.ts` | `services/db.ts` | 数据库操作 |
-| `exporter.ts` | `services/exporter.ts` | 导出到 Canvas |
-| `fs.ts` | `services/fs.ts` | 文件系统操作 |
+| 数据库 | `src/sidepanel/services/db.ts` | 管理项目、节点、迁移、文本版本、撤销恢复 |
+| 导出 | `src/sidepanel/services/exporter.ts` | 生成 Canvas JSON、打包 ZIP |
+| 文件系统 | `src/sidepanel/services/fs.ts` | 申请本地目录权限、读写 Markdown 文件与图片 |
 
----
+## 关键设计选择
 
-## 4. 关键设计决策
+- 使用 `IndexedDB` 而不是 `localStorage`，因为需要存图片 `Blob`
+- 图片下载放在 `Background`，以绕开部分站点对前端直接拉图的限制
+- 拖拽 payload 做双通道传递：`dataTransfer` + background 缓存
+- 文本卡片保留 `originalText / editedText`，便于切换原文与编辑版
 
-### 4.1 为什么使用 IndexedDB 而不是 localStorage?
+## 当前约束
 
-- **容量**: localStorage 只有 5MB，IndexedDB 可达 5-10GB
-- **二进制支持**: 直接存储 Blob（图片）
-- **异步**: 不阻塞主线程
-
-### 4.2 为什么图片要转 Base64?
-
-- Service Worker 无法直接传递 Blob 到主线程
-- Base64 是跨上下文传递二进制数据的可靠方式
-- 接收端再转回 Blob 存储
-
-### 4.3 为什么使用 @dnd-kit 而不是 React DnD?
-
-- 更轻量
-- 更好的可访问性支持
-- 更现代的 API 设计
-
-### 4.4 文本版本控制设计
-
-**问题**: 用户编辑后，如何保留原始内容？
-
-**方案**:
-```typescript
-interface CanvasNode {
-  text: string         // 当前显示文本
-  originalText: string // 原始捕获文本
-  editedText: string   // 编辑版本
-  hasEdited: boolean   // 是否已编辑
-}
-```
-
-- 第一次编辑：保存 originalText，创建 editedText
-- 后续编辑：只更新 editedText
-- UI 支持切换显示原始/编辑版本
-
----
-
-## 5. 性能优化
-
-### 5.1 数据库查询优化
-
-- 使用 `useLiveQuery` 实现响应式更新
-- 只索引必要字段（`fileData` 不索引）
-- 批量操作使用 `db.transaction()`
-
-### 5.2 渲染优化
-
-- React.memo 缓存卡片组件
-- 图片懒加载
-- 虚拟滚动（待实现）
-
-### 5.3 内存管理
-
-- `URL.createObjectURL` 创建的 URL 要及时 `revokeObjectURL`
-- 导出时流式处理 ZIP
-
----
-
-## 6. 安全与隐私
-
-| 方面 | 策略 |
-|------|------|
-| 数据存储 | 100% 本地 IndexedDB |
-| 网络请求 | Background 代理，避免 CORS |
-| 权限 | 最小化权限（sidePanel, storage） |
-| 用户追踪 | 无账户、无追踪、无分析 |
-
----
-
-## 7. 调试指南
-
-### 7.1 查看日志
-
-**Side Panel**:
-```
-右键 Side Panel → 检查 → Console
-过滤 [Cascade]
-```
-
-**Background**:
-```
-chrome://extensions/ → 点击 "service worker" 链接
-```
-
-**Content Script**:
-```
-网页按 F12 → Console
-过滤 [Cascade]
-```
-
-### 7.2 数据库检查
-
-```javascript
-// 在 Console 中
-db.projects.toArray().then(console.log)
-db.nodes.where('projectId').equals(1).sortBy('order').then(console.log)
-```
-
-### 7.3 常见问题
-
-| 问题 | 排查步骤 |
-|------|----------|
-| 拖拽无反应 | 检查 Content Script 是否注入 |
-| 图片下载失败 | 检查 Background 日志 |
-| 导出失败 | 检查 Console 错误信息 |
+- `lastDragPayload` 目前是单例内存缓存，没有按 tab 隔离
+- 文档里曾提到的“卡片拖拽排序”在当前 UI 中尚未真正接入
+- Markdown 项目的图片插入仍可用但体验还在打磨
+- 当前没有自动化测试，验证主要依赖手工和构建

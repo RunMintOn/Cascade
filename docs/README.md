@@ -1,104 +1,53 @@
-# Cascade 开发文档
+# Cascade 文档总览
 
-**项目**: Cascade (原名 WebCanvas)  
-**版本**: 1.0.0  
-**最后更新**: 2026-02-20
+**最后更新**: 2026-03-08
 
----
+这套文档只保留 5 篇核心内容。目标很简单：信息少而准，读者能快速找到答案。
 
-## 📁 文档索引
+## 文档地图
 
-| 文档 | 说明 |
-|------|------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | 系统架构与技术栈 |
-| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | 数据库结构与类型定义 |
-| [FEATURES.md](./FEATURES.md) | 功能清单与实现状态 |
-| [EXPORT_GUIDE.md](./EXPORT_GUIDE.md) | 导出到 Obsidian Canvas 规范 |
-| [USER_GUIDE.md](./USER_GUIDE.md) | 用户使用指南 |
-| [CHANGELOG.md](./CHANGELOG.md) | 更新日志 |
-| [TODO.md](./TODO.md) | 待实现功能与改进计划 |
+### 1. 项目入口
 
----
+- `../README.md`
+- 适合第一次接触项目的人
+- 快速了解产品定位、安装方式和基础使用
 
-## 🚀 快速开始
+### 2. 架构说明
 
-### 新成员入门
+- `ARCHITECTURE.md`
+- 适合开发、排查和理解系统边界
+- 重点看扩展分层、数据流、核心服务和当前约束
 
-1. 先阅读 [ARCHITECTURE.md](./ARCHITECTURE.md) 了解技术栈
-2. 查看 [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) 理解数据结构
-3. 阅读 [FEATURES.md](./FEATURES.md) 了解已实现功能
+### 3. 用户指南
 
-### 用户
+- `USER_GUIDE.md`
+- 适合演示、使用和写操作手册
+- 重点看安装、采集、编辑、导出、FAQ
 
-- 直接使用指南：[USER_GUIDE.md](./USER_GUIDE.md)
-- 遇到问题：查看 [TODO.md](./TODO.md) 确认是否是已知问题
+### 4. 参考手册
 
----
+- `REFERENCE.md`
+- 适合开发者和维护者
+- 合并了功能现状、数据库结构、导出规则和关键限制
 
-## 📦 项目概述
+### 5. 路线图
 
-**Cascade** 是一个浏览器扩展，用于从网页采集内容（文本、图片、链接）并导出为 Obsidian Canvas 格式。
+- `ROADMAP.md`
+- 适合维护者和后续迭代
+- 合并了近期变更、当前重点和技术债务
 
-### 核心工作流
+## 推荐阅读路径
 
-```
-网页采集 → 卡片列表 → 导出到 Obsidian Canvas
-   ↓           ↓              ↓
-拖拽/粘贴   编辑/排序    4 列网格布局
-```
+| 目标 | 建议顺序 |
+|------|----------|
+| 快速了解项目 | `../README.md` → `ARCHITECTURE.md` → `REFERENCE.md` |
+| 给用户演示 | `../README.md` → `USER_GUIDE.md` |
+| 参与开发 | `ARCHITECTURE.md` → `REFERENCE.md` → `ROADMAP.md` |
+| 排查文档与代码是否一致 | `REFERENCE.md` → `ARCHITECTURE.md` |
 
-### 技术栈
+## 文档原则
 
-| 模块 | 技术 |
-|------|------|
-| 框架 | React 19 + TypeScript |
-| 构建 | Vite + CRXJS |
-| 数据库 | Dexie.js (IndexedDB) |
-| 拖拽 | @dnd-kit |
-| 样式 | Tailwind CSS 4 |
-| 打包 | JSZip |
-
-### 项目结构
-
-```
-src/
-├── background/           # Service Worker（图片下载）
-├── content/              # Content Script（拖拽监听）
-├── sidepanel/            # 侧边栏主界面
-│   ├── components/       # React 组件
-│   ├── services/         # 服务层（DB、导出、文件系统）
-│   ├── contexts/         # React Context（Undo）
-│   └── App.tsx           # 主应用
-└── types/                # TypeScript 类型定义
-```
-
----
-
-## 📝 文档维护原则
-
-### 单一事实来源
-
-- 文档必须与代码一致
-- 代码变更时必须同步更新文档
-- 不记录代码中不存在的内容
-
-### 文档分类
-
-| 类型 | 更新频率 | 负责人 |
-|------|----------|--------|
-| 架构文档 | 低（架构变更时） | 核心开发 |
-| 数据库 Schema | 中（数据库变更时） | 数据库负责人 |
-| 功能清单 | 高（每次迭代） | 全体开发 |
-| 用户指南 | 中（功能变更时） | 产品负责人 |
-| 更新日志 | 高（每次提交） | 提交者 |
-
----
-
-## 🔗 外部资源
-
-- [React 官方文档](https://react.dev/)
-- [Vite 官方文档](https://vitejs.dev/)
-- [Dexie.js 文档](https://dexie.org/)
-- [@dnd-kit 文档](https://dndkit.com/)
-- [Chrome Extension 文档](https://developer.chrome.com/docs/extensions/)
-- [Obsidian Canvas 规范](https://jsoncanvas.org/spec/1.0/)
+- 以当前代码为准，不保留历史幻觉
+- 每篇文档只回答一类问题
+- 优先保留高价值事实、流程和限制
+- 尽量少解释，尽量少重复
