@@ -1,6 +1,7 @@
 # Cascade
 
 Cascade 是一个 Chrome / Edge 侧边栏扩展，用来把网页上的文本、图片和链接快速收集到本地缓冲区，并导出为 Obsidian Canvas。
+![alt text](image-1.png)
 
 ## 项目定位
 
